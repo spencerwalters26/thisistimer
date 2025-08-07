@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visual Timer</title>
+
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Pickr CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"
+    />
+
+    <!-- Your CSS -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- Pickr JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"
+      defer
+    ></script>
+  </head>
+
+  <body>
+    <div id="progress-bar"></div>
+
+    <!-- Setup Screen -->
+    <div class="container" id="setup">
+      <h1 class="title-prompt">What are you working on?</h1>
+      <input type="text" id="titleInput" placeholder="world domination etc." />
+
+      <h1 class="time-prompt">How long are you working for?</h1>
+      <input
+        type="text"
+        id="timeInput"
+        placeholder="remember, rome wasn't built in a day"
+      />
+
+      <button id="startBtn">Start</button>
+
+      <!-- Color Picker -->
+      <div id="color-picker-wrapper">
+        <i class="fa-solid fa-palette" id="color-picker-toggle"></i>
+        <div id="color-picker-anchor"></div>
+        <!-- This is where Pickr will attach -->
+      </div>
+    </div>
+
+    <!-- Timer Screen -->
+    <div class="container hidden" id="timerScreen">
+      <div id="percentage">0%</div>
+      <div id="restart"><i class="fa-solid fa-rotate-left"></i></div>
+      <div id="timer-title"></div>
+      <div id="timer"></div>
+    </div>
+
+    <!-- Your JS -->
+    <script src="scripts.js" defer></script>
+  </body>
+</html>
