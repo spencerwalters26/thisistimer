@@ -1,5 +1,3 @@
-// scripts.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const startBtn = document.getElementById("startBtn");
   const setup = document.getElementById("setup");
@@ -11,12 +9,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const restartBtn = document.getElementById("restart");
   const colorPickerToggle = document.getElementById("color-picker-toggle");
 
-  let savedColor = localStorage.getItem("userColor") || "cyan";
+  const savedColor = localStorage.getItem("userColor") || "cyan";
   applyColor(savedColor);
+
+  let previewColor = null;
 
   const pickr = Pickr.create({
     el: "#color-picker-anchor",
-    container: "#color-picker-wrapper", // 👈 ADD THIS
+    container: "#color-picker-wrapper",
     theme: "nano",
     default: savedColor,
     components: {
@@ -27,40 +27,35 @@ document.addEventListener("DOMContentLoaded", () => {
         hex: true,
         input: true,
         save: true,
+        cancel: true,
       },
     },
   });
 
-  // Show on click
+  // Toggle Pickr
   colorPickerToggle.addEventListener("click", () => {
     pickr.show();
   });
 
-  // Live preview while dragging the picker
+  // On color change (live preview only)
   pickr.on("change", (color) => {
-    const hex = color.toHEXA().toString();
-    previewColor(hex); // 👈 Apply without saving
+    previewColor = color.toHEXA().toString();
+    applyColor(previewColor);
   });
 
-  // Save and apply color
+  // On save → store and apply
   pickr.on("save", (color) => {
     const hex = color.toHEXA().toString();
-    savedColor = hex;
+    localStorage.setItem("userColor", hex);
     applyColor(hex);
     pickr.hide();
   });
 
-  pickr.on("hide", () => {
-    applyColor(savedColor); // 👈 revert to last saved color
+  // On cancel → revert preview to saved color
+  pickr.on("cancel", () => {
+    applyColor(localStorage.getItem("userColor") || "cyan");
+    pickr.hide();
   });
-
-  function previewColor(color) {
-    document.querySelector("#progress-bar").style.backgroundColor = color;
-    document.querySelector("button").style.backgroundColor = color;
-    document.querySelectorAll('input[type="text"]').forEach((input) => {
-      input.style.borderBottom = `2px solid ${color}`;
-    });
-  }
 
   let totalSeconds = 0;
   let elapsed = 0;
@@ -138,6 +133,5 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('input[type="text"]').forEach((input) => {
       input.style.borderBottom = `2px solid ${color}`;
     });
-    localStorage.setItem("userColor", color);
   }
 });
