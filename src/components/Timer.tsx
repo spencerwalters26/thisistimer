@@ -24,8 +24,11 @@ export default function Timer() {
   const [title, setTitle] = useState('');
   const [totalTime, setTotalTime] = useState(0);
   const [themeColor, setThemeColor] = useState('#00ffff');
+  const [previewColor, setPreviewColor] = useState<string | null>(null);
+  const [isPickrOpen, setIsPickrOpen] = useState(false);
   const pickrContainerRef = useRef<HTMLDivElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
+  const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
 
   const parseTime = (input: string): number => {
@@ -50,7 +53,7 @@ export default function Timer() {
 
   const startTimer = () => {
     const totalSeconds = parseTime(timeInput);
-    if (totalSeconds <= 0) return;
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return;
 
     setTitle(titleInput);
     setRemainingTime(totalSeconds);
@@ -110,9 +113,19 @@ export default function Timer() {
         }
       });
       pickrInstanceRef.current = instance;
+      // Capture internal button for reliable toggling
+      const btn = pickrContainerRef.current?.querySelector?.('.pcr-button') as HTMLButtonElement | null;
+      if (btn) pickrButtonRef.current = btn;
+      instance.on('show', () => {
+        setIsPickrOpen(true);
+      });
+      instance.on('hide', () => {
+        setIsPickrOpen(false);
+        setPreviewColor(null);
+      });
       instance.on('change', (color: unknown) => {
         const hex = (color as ColorHexLike).toHEXA().toString();
-        setThemeColor(hex);
+        setPreviewColor(hex);
       });
       instance.on('save', (color: unknown) => {
         const hex = (color as ColorHexLike).toHEXA().toString();
@@ -146,7 +159,7 @@ export default function Timer() {
         top: 0,
         left: 0,
         height: '100%',
-        backgroundColor: themeColor,
+        backgroundColor: (isPickrOpen && previewColor) ? previewColor : themeColor,
         width: totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100)}%` : '0%',
         transition: 'width 0.3s linear',
         zIndex: 0
@@ -179,7 +192,7 @@ export default function Timer() {
           style={{
             background: 'transparent',
             border: 'none',
-            borderBottom: `2px solid ${themeColor}`,
+            borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
             fontSize: '2rem',
             color: 'white',
@@ -206,7 +219,7 @@ export default function Timer() {
           style={{
             background: 'transparent',
             border: 'none',
-            borderBottom: `2px solid ${themeColor}`,
+            borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
             fontSize: '2rem',
             color: 'white',
@@ -219,7 +232,7 @@ export default function Timer() {
         />
 
         <button onClick={startTimer} style={{
-          background: themeColor,
+          background: (isPickrOpen && previewColor) ? previewColor : themeColor,
           color: 'black',
           border: 'none',
           padding: '0.6rem 2rem',
@@ -232,14 +245,14 @@ export default function Timer() {
         {/* Palette trigger + Pickr container (below Start) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1rem' }}>
           <button
-            onClick={() => pickrInstanceRef.current?.show?.()}
+            onClick={() => (pickrButtonRef.current ? pickrButtonRef.current.click() : pickrInstanceRef.current?.show?.())}
             aria-label="Choose color theme"
             title="Choose color theme"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: themeColor,
+              color: (isPickrOpen && previewColor) ? previewColor : themeColor,
               background: 'transparent',
               border: 'none',
               borderRadius: '9999px',
@@ -286,10 +299,10 @@ export default function Timer() {
           onMouseLeave={() => setIsRestartHovered(false)}
           style={{
           position: 'fixed',
-          top: '50px',
-          right: '12px',
+          top: '10px',
+          right: '10px',
           fontSize: '2.5rem',
-          color: isRestartHovered ? themeColor : 'white',
+          color: isRestartHovered ? ((isPickrOpen && previewColor) ? previewColor : themeColor) : 'white',
           cursor: 'pointer',
           zIndex: 3,
           display: isRunning ? 'block' : 'none',
@@ -300,7 +313,7 @@ export default function Timer() {
         
         <div style={{
           position: 'fixed',
-          top: '40px',
+          top: '10px',
           left: '50%',
           transform: 'translateX(-50%)',
           fontSize: '4rem',
