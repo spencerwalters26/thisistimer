@@ -26,9 +26,10 @@ export default function Timer() {
   const [themeColor, setThemeColor] = useState('#00ffff');
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [isPickrOpen, setIsPickrOpen] = useState(false);
-  const pickrContainerRef = useRef<HTMLButtonElement | null>(null);
+  const pickrAnchorRef = useRef<HTMLDivElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
+  const iconButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
   const [startMs, setStartMs] = useState<number | null>(null);
   const [endMs, setEndMs] = useState<number | null>(null);
@@ -36,16 +37,46 @@ export default function Timer() {
   const [toast, setToast] = useState<string | null>(null);
 
   const parseTime = (input: string): number => {
-    const str = input.toLowerCase();
+    if (!input) return 0;
+    const str = input.trim().toLowerCase();
+    if (!str) return 0;
+
+    // Colon formats hh:mm(:ss)? or mm:ss
+    if (str.includes(':')) {
+      const parts = str.split(':').map(p => p.trim());
+      if (parts.every(p => /^\d+$/.test(p))) {
+        const nums = parts.map(p => parseInt(p, 10));
+        let h = 0, m = 0, s = 0;
+        if (nums.length === 3) [h, m, s] = nums as [number, number, number];
+        else if (nums.length === 2) {
+          // Treat as mm:ss
+          [m, s] = nums as [number, number];
+        }
+        return h * 3600 + m * 60 + s;
+      }
+    }
+
+    // Token formats like 1.5h, 90m, 45s, 1h 30m, 1h30m, etc.
     let seconds = 0;
-    const hrMatch = str.match(/(\d+)\s*hour/);
-    const minMatch = str.match(/(\d+)\s*min/);
-    const secMatch = str.match(/(\d+)\s*sec/);
-    if (hrMatch) seconds += parseInt(hrMatch[1]) * 3600;
-    if (minMatch) seconds += parseInt(minMatch[1]) * 60;
-    if (secMatch) seconds += parseInt(secMatch[1]);
-    if (!hrMatch && !minMatch && !secMatch) seconds = parseInt(str) * 60;
-    return seconds;
+    const regex = /([0-9]*\.?[0-9]+)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds)?/g;
+    let match: RegExpExecArray | null;
+    let matchedAny = false;
+    while ((match = regex.exec(str)) !== null) {
+      matchedAny = true;
+      const value = parseFloat(match[1]);
+      const unit = match[2];
+      if (!unit) {
+        // No unit provided: will decide later
+        seconds += value * 60; // default to minutes
+        continue;
+      }
+      if (/^h|hr|hrs|hour|hours$/.test(unit)) seconds += value * 3600;
+      else if (/^m|min|mins|minute|minutes$/.test(unit)) seconds += value * 60;
+      else if (/^s|sec|secs|second|seconds$/.test(unit)) seconds += value;
+    }
+
+    if (!matchedAny) return 0;
+    return Math.floor(seconds);
   };
 
   const formatTime = (secs: number): string => {
@@ -102,13 +133,13 @@ export default function Timer() {
 
   // Initialize Pickr (nano theme) for color selection
   useEffect(() => {
-    if (!pickrContainerRef.current || pickrInstanceRef.current) return;
+    if (!pickrAnchorRef.current || pickrInstanceRef.current) return;
     let destroyed = false;
     (async () => {
       const Pickr = (await import('@simonwep/pickr')).default;
       if (destroyed) return;
       const instance = (Pickr as unknown as { create: (opts: unknown) => PickrInstance }).create({
-        el: pickrContainerRef.current as HTMLElement,
+        el: pickrAnchorRef.current as HTMLElement,
         theme: 'nano',
         default: themeColor,
         position: 'bottom-middle',
@@ -126,7 +157,7 @@ export default function Timer() {
       });
       pickrInstanceRef.current = instance;
       // Capture internal button for reliable toggling
-      const btn = pickrContainerRef.current?.querySelector?.('.pcr-button') as HTMLButtonElement | null;
+      const btn = pickrAnchorRef.current?.querySelector?.('.pcr-button') as HTMLButtonElement | null;
       if (btn) pickrButtonRef.current = btn;
       instance.on('show', () => {
         setIsPickrOpen(true);
@@ -152,7 +183,7 @@ export default function Timer() {
       } catch {}
       pickrInstanceRef.current = null;
     };
-  }, [pickrContainerRef, themeColor]);
+  }, [pickrAnchorRef, themeColor]);
 
   return (
     <div style={{
@@ -263,10 +294,10 @@ export default function Timer() {
           marginTop: '0.5rem'
         }}>Start</button>
 
-        {/* Palette trigger + Pickr container (below Start) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1rem' }}>
+        {/* Palette trigger + Pickr anchor (popover attaches here) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1rem', position: 'relative' }}>
           <button
-            ref={pickrContainerRef}
+            ref={iconButtonRef}
             onClick={() => {
               if (isPickrOpen) {
                 pickrInstanceRef.current?.hide?.();
@@ -293,6 +324,9 @@ export default function Timer() {
           >
             <FaPalette size={22} />
           </button>
+
+          {/* Invisible anchor so Pickr can position relative to the icon */}
+          <div ref={pickrAnchorRef} style={{ position: 'absolute', top: '100%', left: 0 }} />
         </div>
       </div>
 
@@ -365,7 +399,7 @@ export default function Timer() {
 
         {/* Toast */}
         {toast && (
-          <div style={{
+          <div role="alert" aria-live="assertive" style={{
             position: 'fixed',
             bottom: '20px',
             left: '50%',
