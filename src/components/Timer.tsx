@@ -39,16 +39,28 @@ export default function Timer() {
   const [toast, setToast] = useState<string | null>(null);
   const words = [
     // Productivity
-    'study','work','focus','deepwork','write','sprint','grind','finish','create','code',
-    // Wellness / Lifestyle
-    'nap','meditate','stretch','breathe','chill','unplug','reflect','rest','walk','vibe',
-    // Domestic Tasks
-    'cook','clean','shower','laundry','waterplants','dishes','tidy','fold','organise','mop',
-    // Fun & Random
-    'game','scroll','meme','chillax','party','snack','bicepcurl','shitpost','doomscroll','pace',
+    'focus','study','work','code','write','grind','create','read','plan','finish','organise','build','research','clean','polish',
     // Fitness
-    'run','gym','plank','HIIT','squat','deadlift','jump','pushups','stretch','cooldown'
+    'run','lift','plank','stretch','train','squat','bench','deadlift','pushup','sweat','move','jog','cycle',
+    // Wellness
+    'meditate','breathe','chill','rest','reflect','unwind','relax','nap','reset','soak','zen',
+    // Cooking / Domestic
+    'cook','bake','boil','fry','brew','wash','vacuum','mop','dust','fold','shop','prep',
+    // Fun
+    'game','scroll','meme','vibe','party','sing','dance','jam','binge','paint','draw',
+    // Funny / Absurd
+    'goon','punt','procrastinate','doomscroll','panic','schemin','yeet','touchgrass','manifest','simp','conquer','vanish','loaf'
   ];
+  const timeExamples = [
+    'E.g. 25m, 1:30:00, 90 sec',
+    'E.g. 13s (speedrun to fridge)',
+    'E.g. 40m (nap before regret)',
+    'E.g. 2h (enough to question life choices)',
+    'E.g. 69m (nice)',
+    'E.g. 8h (the sleep I’ll never get)'
+  ];
+  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+  const [timePlaceholder, setTimePlaceholder] = useState<string>(timeExamples[0]);
   const [wordIndex, setWordIndex] = useState(0);
 
   const parseTime = (input: string): number => {
@@ -306,7 +318,7 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
-        {/* Animated Hero: Time to... <word> */}
+        {/* Animated Hero: Time to <word> (theme-colored, italic, preview-aware) */}
         <h1 style={{
           marginBottom: '0.75rem',
           fontSize: 'clamp(2.2rem, 7vw, 4rem)',
@@ -314,7 +326,7 @@ export default function Timer() {
           letterSpacing: '0.5px',
           textAlign: 'center'
         }}>
-          <span>Time to...</span>
+          <span>Time to</span>
           <br />
           <span style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center' }}>
             <AnimatePresence mode="wait">
@@ -324,13 +336,13 @@ export default function Timer() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 30 }}
                 transition={{ type: 'spring', stiffness: 120, damping: 16 }}
-                style={{ position: 'absolute', color: themeColor, fontStyle: 'italic' }}
+                style={{ position: 'absolute', color: (isPickrOpen && previewColor) ? previewColor : themeColor, fontStyle: 'italic' }}
               >
                 {words[wordIndex]}
               </motion.span>
             </AnimatePresence>
             {/* Static spacer to avoid layout shift */}
-            <span style={{ visibility: 'hidden', color: themeColor, fontStyle: 'italic' }}>{words[wordIndex]}</span>
+            <span style={{ visibility: 'hidden', color: (isPickrOpen && previewColor) ? previewColor : themeColor, fontStyle: 'italic' }}>{words[wordIndex]}</span>
           </span>
         </h1>
         
@@ -359,14 +371,15 @@ export default function Timer() {
           marginBottom: '0.5rem',
           fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
           color: 'white'
-        }}>Enter time:</h1>
+        }}>How much time you got?</h1>
         
         <input
           type="text"
           value={timeInput}
           onChange={(e) => setTimeInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="e.g. 25m, 1:30:00, 90 sec"
+          placeholder={timePlaceholder}
+          onFocus={() => setTimePlaceholder(pickRandom(timeExamples))}
           style={{
             background: 'transparent',
             border: 'none',
