@@ -351,12 +351,11 @@ export default function Timer() {
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
-            overflowY: 'hidden',
-            overflowX: 'visible',
+            overflow: 'hidden',
             textAlign: 'center',
-            width: 'min(92vw, 900px)',
-            paddingInline: '24px',
-            minHeight: '3em'
+            width: 'min(98vw, 1200px)',
+            paddingInline: '16px',
+            minHeight: '1.6em'
           }}>
             {words.map((w, index) => (
               <motion.span
@@ -370,10 +369,9 @@ export default function Timer() {
                 }
                 style={{
                   position: 'absolute',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 'max-content',
-                  maxWidth: '100%',
+                  left: 0,
+                  right: 0,
+                  width: '100%',
                   textAlign: 'center',
                   paddingInline: '8px',
                   whiteSpace: 'normal',
