@@ -22,7 +22,7 @@ export default function Timer() {
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [title, setTitle] = useState('');
-  const [totalTime, setTotalTime] = useState(0);
+  const [totalTime, setTotalTime] = useState(0); // kept for potential future use (e.g., display)
   const [themeColor, setThemeColor] = useState('#00ffff');
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [isPickrOpen, setIsPickrOpen] = useState(false);
@@ -30,6 +30,9 @@ export default function Timer() {
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
+  const [startMs, setStartMs] = useState<number | null>(null);
+  const [endMs, setEndMs] = useState<number | null>(null);
+  const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
 
   const parseTime = (input: string): number => {
     const str = input.toLowerCase();
@@ -59,6 +62,9 @@ export default function Timer() {
     setRemainingTime(totalSeconds);
     setTotalTime(totalSeconds);
     setIsRunning(true);
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    setStartMs(now);
+    setEndMs(now + totalSeconds * 1000);
   };
 
   const restart = () => {
@@ -73,21 +79,21 @@ export default function Timer() {
     }
   };
 
+  // Smooth animation frame loop for progress and time
   useEffect(() => {
-    if (!isRunning || remainingTime <= 0) return;
-
-    const interval = setInterval(() => {
-      setRemainingTime(prev => {
-        if (prev <= 1) {
-          setIsRunning(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isRunning, remainingTime]);
+    if (!isRunning || startMs == null || endMs == null) return;
+    let rafId = 0;
+    const tick = (t: number) => {
+      setFrameTime(t);
+      if (t >= endMs) {
+        setIsRunning(false);
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [isRunning, startMs, endMs]);
 
   // Initialize Pickr (nano theme) for color selection
   useEffect(() => {
@@ -161,8 +167,14 @@ export default function Timer() {
         left: 0,
         height: '100%',
         backgroundColor: (isPickrOpen && previewColor) ? previewColor : themeColor,
-        width: totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100)}%` : '0%',
-        transition: 'width 0.3s linear',
+        width: (() => {
+          if (!isRunning || startMs == null || endMs == null) return '0%';
+          const duration = endMs - startMs;
+          const elapsed = Math.min(duration, Math.max(0, frameTime - startMs));
+          const pct = (elapsed / duration) * 100;
+          return `${pct}%`;
+        })(),
+        transition: 'width 40ms linear',
         zIndex: 0
       }}></div>
 
@@ -294,7 +306,13 @@ export default function Timer() {
           fontSize: 'clamp(1rem, 3.5vw, 2rem)',
           zIndex: 2,
           color: 'white'
-        }}>{totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100).toFixed(1)}%` : '0%'}</div>
+        }}>{(() => {
+          if (!isRunning || startMs == null || endMs == null) return '0%';
+          const duration = endMs - startMs;
+          const elapsed = Math.min(duration, Math.max(0, frameTime - startMs));
+          const pct = (elapsed / duration) * 100;
+          return `${pct.toFixed(1)}%`;
+        })()}</div>
         
         <div
           onClick={restart}
@@ -329,7 +347,12 @@ export default function Timer() {
           fontSize: 'clamp(4rem, 20vw, 20rem)',
           marginTop: '2rem',
           color: 'white'
-        }}>{formatTime(remainingTime)}</div>
+        }}>{(() => {
+          if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
+          const remainingMs = Math.max(0, endMs - frameTime);
+          const secs = Math.ceil(remainingMs / 1000);
+          return formatTime(secs);
+        })()}</div>
       </div>
     </div>
   );
