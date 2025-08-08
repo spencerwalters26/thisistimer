@@ -30,6 +30,7 @@ export default function Timer() {
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
   const iconButtonRef = useRef<HTMLButtonElement | null>(null);
+  const timeInputRef = useRef<HTMLInputElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
   const [startMs, setStartMs] = useState<number | null>(null);
   const [endMs, setEndMs] = useState<number | null>(null);
@@ -87,10 +88,18 @@ export default function Timer() {
   };
 
   const startTimer = () => {
-    const totalSeconds = parseTime(timeInput);
-    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
-      setToast("Please enter a valid time (e.g. '25', '25 min', '1 hour 30 min', or '90 sec').");
+    const raw = timeInput.trim();
+    if (!raw) {
+      setToast("Please enter a time (e.g. 25, 25 min, 1:30:00, 90 sec).");
       setTimeout(() => setToast(null), 3500);
+      timeInputRef.current?.focus();
+      return;
+    }
+    const totalSeconds = parseTime(raw);
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+      setToast("Invalid time. Try formats like 25, 25 min, 1h 30m, 1:30:00, or 90 sec.");
+      setTimeout(() => setToast(null), 4000);
+      timeInputRef.current?.focus();
       return;
     }
 
@@ -196,6 +205,18 @@ export default function Timer() {
       padding: 0,
       boxSizing: 'border-box'
     }}>
+      {toast && (
+        <div className="global-toast" role="alert" aria-live="assertive" style={{
+          background: 'rgba(0,0,0,0.92)',
+          border: `1px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
+          color: 'white',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          fontSize: 'clamp(0.95rem, 3vw, 1.1rem)'
+        }}>
+          {toast}
+        </div>
+      )}
       {/* Progress Bar */}
       <div style={{ 
         position: 'fixed',
@@ -281,6 +302,7 @@ export default function Timer() {
             outline: 'none',
             padding: '0.4rem 0'
           }}
+          ref={timeInputRef}
         />
 
         <button onClick={startTimer} style={{
@@ -396,25 +418,6 @@ export default function Timer() {
           const secs = Math.ceil(remainingMs / 1000);
           return formatTime(secs);
         })()}</div>
-
-        {/* Toast */}
-        {toast && (
-          <div role="alert" aria-live="assertive" style={{
-            position: 'fixed',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(0,0,0,0.85)',
-            border: `1px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
-            color: 'white',
-            padding: '10px 14px',
-            borderRadius: '8px',
-            fontSize: 'clamp(0.9rem, 3.2vw, 1.1rem)',
-            zIndex: 10
-          }}>
-            {toast}
-          </div>
-        )}
       </div>
     </div>
   );

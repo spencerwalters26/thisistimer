@@ -27,3 +27,12 @@ html, body {
   width: 0 !important;
   height: 0 !important;
 }
+
+/* Global toast layer should always float above */
+.global-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
