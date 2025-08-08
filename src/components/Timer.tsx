@@ -26,7 +26,7 @@ export default function Timer() {
   const [themeColor, setThemeColor] = useState('#00ffff');
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [isPickrOpen, setIsPickrOpen] = useState(false);
-  const pickrContainerRef = useRef<HTMLDivElement | null>(null);
+  const pickrContainerRef = useRef<HTMLButtonElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
@@ -100,6 +100,7 @@ export default function Timer() {
         el: pickrContainerRef.current as HTMLElement,
         theme: 'nano',
         default: themeColor,
+        position: 'bottom-middle',
         swatches: ['#00ffff', '#ff00ff', '#00ff88', '#ffcc00', '#ff5555', '#6a5acd'],
         components: {
           preview: true,
@@ -179,7 +180,7 @@ export default function Timer() {
       }}>
         <h1 style={{
           marginBottom: '0.5rem',
-          fontSize: '2.2rem',
+          fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
           color: 'white'
         }}>What are you working on?</h1>
         
@@ -194,7 +195,7 @@ export default function Timer() {
             border: 'none',
             borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
-            fontSize: '2rem',
+            fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
             color: 'white',
             textAlign: 'center',
             width: '80vw',
@@ -206,7 +207,7 @@ export default function Timer() {
 
         <h1 style={{
           marginBottom: '0.5rem',
-          fontSize: '2.2rem',
+          fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
           color: 'white'
         }}>How long are you working for?</h1>
         
@@ -221,7 +222,7 @@ export default function Timer() {
             border: 'none',
             borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
-            fontSize: '2rem',
+            fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
             color: 'white',
             textAlign: 'center',
             width: '80vw',
@@ -236,7 +237,7 @@ export default function Timer() {
           color: 'black',
           border: 'none',
           padding: '0.6rem 2rem',
-          fontSize: '2rem',
+          fontSize: 'clamp(1.1rem, 3.5vw, 2rem)',
           borderRadius: '8px',
           cursor: 'pointer',
           marginTop: '0.5rem'
@@ -245,7 +246,16 @@ export default function Timer() {
         {/* Palette trigger + Pickr container (below Start) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1rem' }}>
           <button
-            onClick={() => (pickrButtonRef.current ? pickrButtonRef.current.click() : pickrInstanceRef.current?.show?.())}
+            ref={pickrContainerRef}
+            onClick={() => {
+              if (isPickrOpen) {
+                pickrInstanceRef.current?.hide?.();
+              } else if (pickrButtonRef.current) {
+                pickrButtonRef.current.click();
+              } else {
+                pickrInstanceRef.current?.show?.();
+              }
+            }}
             aria-label="Choose color theme"
             title="Choose color theme"
             style={{
@@ -262,13 +272,6 @@ export default function Timer() {
           >
             <FaPalette size={22} />
           </button>
-
-          {/* Hidden anchor for Pickr; Pickr will attach its trigger here */}
-          <div
-            ref={pickrContainerRef}
-            style={{ width: 0, height: 0, overflow: 'hidden' }}
-            aria-hidden="true"
-          />
         </div>
       </div>
 
@@ -288,7 +291,7 @@ export default function Timer() {
           position: 'fixed',
           top: '10px',
           left: '10px',
-          fontSize: '2rem',
+          fontSize: 'clamp(1rem, 3.5vw, 2rem)',
           zIndex: 2,
           color: 'white'
         }}>{totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100).toFixed(1)}%` : '0%'}</div>
@@ -301,7 +304,7 @@ export default function Timer() {
           position: 'fixed',
           top: '10px',
           right: '10px',
-          fontSize: '2.5rem',
+          fontSize: 'clamp(1.2rem, 3.5vw, 2.5rem)',
           color: isRestartHovered ? ((isPickrOpen && previewColor) ? previewColor : themeColor) : 'white',
           cursor: 'pointer',
           zIndex: 3,
@@ -316,14 +319,14 @@ export default function Timer() {
           top: '10px',
           left: '50%',
           transform: 'translateX(-50%)',
-          fontSize: '4rem',
+          fontSize: 'clamp(1.5rem, 6vw, 4rem)',
           zIndex: 3,
           textAlign: 'center',
           color: 'white'
         }}>{title}</div>
         
         <div style={{
-          fontSize: '20rem',
+          fontSize: 'clamp(4rem, 20vw, 20rem)',
           marginTop: '2rem',
           color: 'white'
         }}>{formatTime(remainingTime)}</div>
