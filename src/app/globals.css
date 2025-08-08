@@ -31,8 +31,9 @@ html, body {
 /* Global toast layer should always float above */
 .global-toast {
   position: fixed;
-  top: 12px;
+  top: clamp(8px, 2vh, 16px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
+  max-width: min(94vw, 680px);
 }

@@ -91,15 +91,30 @@ export default function Timer() {
     const raw = timeInput.trim();
     if (!raw) {
       setToast("Please enter a time (e.g. 25, 25 min, 1:30:00, 90 sec).");
-      setTimeout(() => setToast(null), 3500);
-      timeInputRef.current?.focus();
+      // Keep toast visible on mobile: avoid focusing the input to prevent keyboard covering
+      if (typeof window !== 'undefined') {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        } else {
+          timeInputRef.current?.focus();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
     const totalSeconds = parseTime(raw);
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
       setToast("Invalid time. Try formats like 25, 25 min, 1h 30m, 1:30:00, or 90 sec.");
-      setTimeout(() => setToast(null), 4000);
-      timeInputRef.current?.focus();
+      if (typeof window !== 'undefined') {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          (document.activeElement as HTMLElement | null)?.blur?.();
+        } else {
+          timeInputRef.current?.focus();
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
 
@@ -207,14 +222,33 @@ export default function Timer() {
     }}>
       {toast && (
         <div className="global-toast" role="alert" aria-live="assertive" style={{
-          background: 'rgba(0,0,0,0.92)',
-          border: `1px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
+          background: 'rgba(190, 20, 30, 0.95)',
+          border: '1px solid rgba(255, 120, 120, 0.9)',
           color: 'white',
-          padding: '10px 14px',
-          borderRadius: '8px',
-          fontSize: 'clamp(0.95rem, 3vw, 1.1rem)'
+          padding: '14px 18px',
+          borderRadius: '10px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+          fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          {toast}
+          <span>{toast}</span>
+          <button
+            onClick={() => setToast(null)}
+            aria-label="Dismiss"
+            style={{
+              marginLeft: '12px',
+              background: 'transparent',
+              color: 'white',
+              border: '1px solid rgba(255,255,255,0.5)',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              cursor: 'pointer'
+            }}
+          >
+            Dismiss
+          </button>
         </div>
       )}
       {/* Progress Bar */}
