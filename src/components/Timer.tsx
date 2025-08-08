@@ -70,7 +70,7 @@ export default function Timer() {
     'E.g. 8h (the sleep I’ll never get)'
   ];
   const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-  const [timePlaceholder, setTimePlaceholder] = useState<string>(() => pickRandom(timeExamples));
+  const [timePlaceholder] = useState<string>(() => pickRandom(timeExamples));
   const [wordIndex, setWordIndex] = useState(() => Math.floor(Math.random() * words.length));
 
   const parseTime = (input: string): number => {
@@ -245,10 +245,17 @@ export default function Timer() {
     };
   }, [pickrAnchorRef, themeColor]);
 
-  // Rotate animated hero words every 3 seconds
+  // Rotate animated hero words every 3 seconds (random next, not repeating)
   useEffect(() => {
     const interval = setInterval(() => {
-      setWordIndex(prev => (prev + 1) % words.length);
+      setWordIndex(prev => {
+        if (words.length <= 1) return prev;
+        let next = prev;
+        while (next === prev) {
+          next = Math.floor(Math.random() * words.length);
+        }
+        return next;
+      });
     }, 3000);
     return () => clearInterval(interval);
   }, [words.length]);
@@ -338,21 +345,33 @@ export default function Timer() {
         }}>
           <span>Time to</span>
           <br />
-          <span style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center' }}>
-            <AnimatePresence mode="wait">
+          <span style={{
+            position: 'relative',
+            display: 'inline-block',
+            width: 'min(90vw, 36ch)',
+            height: '1.2em',
+            overflow: 'hidden'
+          }}>
+            <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={wordIndex}
-                initial={{ opacity: 0, y: -30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 30 }}
-                transition={{ type: 'spring', stiffness: 120, damping: 16 }}
-                style={{ position: 'absolute', color: (isPickrOpen && previewColor) ? previewColor : themeColor, fontStyle: 'italic' }}
+                initial={{ clipPath: 'inset(0 100% 0 0)' }}
+                animate={{ clipPath: 'inset(0 0% 0 0)' }}
+                exit={{ clipPath: 'inset(0 0% 0 100%)' }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'grid',
+                  placeItems: 'center',
+                  whiteSpace: 'nowrap',
+                  color: (isPickrOpen && previewColor) ? previewColor : themeColor,
+                  fontStyle: 'italic'
+                }}
               >
                 {words[wordIndex]}
               </motion.span>
             </AnimatePresence>
-            {/* Static spacer to avoid layout shift */}
-            <span style={{ visibility: 'hidden', color: (isPickrOpen && previewColor) ? previewColor : themeColor, fontStyle: 'italic' }}>{words[wordIndex]}</span>
           </span>
         </h1>
         
@@ -389,7 +408,6 @@ export default function Timer() {
           onChange={(e) => setTimeInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={timePlaceholder}
-          onFocus={() => setTimePlaceholder(pickRandom(timeExamples))}
           style={{
             background: 'transparent',
             border: 'none',
