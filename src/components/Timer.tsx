@@ -48,8 +48,18 @@ export default function Timer() {
     'cook','bake','boil','fry','brew','wash','vacuum','mop','dust','fold','shop','prep',
     // Fun
     'game','scroll','meme','vibe','party','sing','dance','jam','binge','paint','draw',
-    // Funny / Absurd
-    'goon','punt','procrastinate','doomscroll','panic','schemin','yeet','touchgrass','manifest','simp','conquer','vanish','loaf'
+    // Funny / Absurd (short)
+    'goon','punt','procrastinate','doomscroll','panic','schemin','yeet','touchgrass','manifest','simp','conquer','vanish','loaf',
+    // Epic / Over-the-top (phrases)
+    'conquer the galaxy','start my villain arc','invent a new colour','hack the Pentagon (in Minecraft)','control the weather','overthrow the government (peacefully)','find Atlantis','launch the doomsday device','ascend to godhood','break the space-time continuum',
+    // Everyday but dramatic
+    'clean… ugh','finally do the laundry','empty the dishwasher like a hero','make a coffee I don’t need','scroll endlessly','stare into the fridge','reorganise my sock drawer','water the plant that’s already dead','untangle my headphones (again)','Google symptoms I shouldn’t',
+    // Fitness / Skill-based
+    'master the worm','bench 200kg','run… to the fridge','beat my personal best (in napping)','learn the splits','juggle chainsaws (safely)','plank until I regret it','learn to moonwalk','win Olympic gold (in procrastination)','dunk on a 7-foot hoop',
+    // Social / Work-life chaos
+    'convince boss I’m busy','reply to emails from 2019','start my OnlyFans (for feet pics)','quit my job dramatically','join a pyramid scheme','become a LinkedIn thought leader','fake a Zoom freeze','network aggressively','start an inter-office feud','cyberstalk my ex’s dog',
+    // Absurd / Internet-core
+    'goon','speedrun Minecraft IRL','touch grass','yeet myself into orbit','simp publicly','invent a sandwich','1v1 God','recreate Shrek from memory','speedrun Wikipedia','become the main character'
   ];
   const timeExamples = [
     'E.g. 25m, 1:30:00, 90 sec',
@@ -60,8 +70,8 @@ export default function Timer() {
     'E.g. 8h (the sleep I’ll never get)'
   ];
   const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-  const [timePlaceholder, setTimePlaceholder] = useState<string>(timeExamples[0]);
-  const [wordIndex, setWordIndex] = useState(0);
+  const [timePlaceholder, setTimePlaceholder] = useState<string>(() => pickRandom(timeExamples));
+  const [wordIndex, setWordIndex] = useState(() => Math.floor(Math.random() * words.length));
 
   const parseTime = (input: string): number => {
     if (!input) return 0;
