@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FaPalette } from 'react-icons/fa';
 import { FiRotateCw } from 'react-icons/fi';
 
@@ -36,6 +37,19 @@ export default function Timer() {
   const [endMs, setEndMs] = useState<number | null>(null);
   const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
   const [toast, setToast] = useState<string | null>(null);
+  const words = [
+    // Productivity
+    'study','work','focus','deepwork','write','sprint','grind','finish','create','code',
+    // Wellness / Lifestyle
+    'nap','meditate','stretch','breathe','chill','unplug','reflect','rest','walk','vibe',
+    // Domestic Tasks
+    'cook','clean','shower','laundry','waterplants','dishes','tidy','fold','organise','mop',
+    // Fun & Random
+    'game','scroll','meme','chillax','party','snack','bicepcurl','shitpost','doomscroll','pace',
+    // Fitness
+    'run','gym','plank','HIIT','squat','deadlift','jump','pushups','stretch','cooldown'
+  ];
+  const [wordIndex, setWordIndex] = useState(0);
 
   const parseTime = (input: string): number => {
     if (!input) return 0;
@@ -209,6 +223,14 @@ export default function Timer() {
     };
   }, [pickrAnchorRef, themeColor]);
 
+  // Rotate animated hero words every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex(prev => (prev + 1) % words.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [words.length]);
+
   return (
     <div style={{
       backgroundColor: '#1c1c1c',
@@ -284,11 +306,31 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
+        {/* Animated Hero: Time to <word> */}
         <h1 style={{
           marginBottom: '0.5rem',
-          fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
-          color: 'white'
-        }}>What are you working on?</h1>
+          fontSize: 'clamp(1.8rem, 5vw, 3rem)',
+          color: 'white',
+          letterSpacing: '0.5px',
+        }}>
+          <span>Time to&nbsp;</span>
+          <span style={{ position: 'relative', display: 'inline-flex', width: '10ch', justifyContent: 'center' }}>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={wordIndex}
+                initial={{ opacity: 0, y: -30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 30 }}
+                transition={{ type: 'spring', stiffness: 120, damping: 16 }}
+                style={{ position: 'absolute' }}
+              >
+                {words[wordIndex]}
+              </motion.span>
+            </AnimatePresence>
+            {/* Static spacer to avoid layout shift */}
+            <span style={{ visibility: 'hidden' }}>{words[wordIndex]}</span>
+          </span>
+        </h1>
         
         <input
           type="text"
