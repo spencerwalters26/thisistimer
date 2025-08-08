@@ -349,40 +349,36 @@ export default function Timer() {
           <br />
           <span style={{
             position: 'relative',
-            display: 'block',
+            display: 'grid',
+            placeItems: 'center',
             overflow: 'hidden',
             width: 'min(98vw, 1200px)',
             minHeight: '1.6em',
             margin: '0 auto'
           }}>
-            <span style={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 'max-content'
-            }}>
-              {words.map((w, index) => (
-                <motion.span
-                  key={index}
-                  initial={{ opacity: 0, y: '-100%' }}
-                  transition={{ type: 'spring', stiffness: 50 }}
-                  animate={
-                    wordIndex === index
-                      ? { y: '0%', opacity: 1 }
-                      : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
-                  }
-                  style={{
-                    position: 'absolute',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                    color: (isPickrOpen && previewColor) ? previewColor : themeColor,
-                    fontStyle: 'italic'
-                  }}
-                >
-                  {w}
-                </motion.span>
-              ))}
-            </span>
+            {words.map((w, index) => (
+              <motion.span
+                key={index}
+                initial={{ opacity: 0, y: '-100%' }}
+                transition={{ type: 'spring', stiffness: 50 }}
+                animate={
+                  wordIndex === index
+                    ? { y: '0%', opacity: 1 }
+                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
+                }
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center',
+                  color: (isPickrOpen && previewColor) ? previewColor : themeColor,
+                  fontStyle: 'italic'
+                }}
+              >
+                {w}
+              </motion.span>
+            ))}
           </span>
         </h1>
         
