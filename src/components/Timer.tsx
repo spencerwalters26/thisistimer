@@ -351,21 +351,21 @@ export default function Timer() {
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
-            overflowY: 'hidden',
-            overflowX: 'visible',
+            overflow: 'hidden',
             textAlign: 'center',
-            minHeight: '1.2em',
-            width: '100%'
+            width: 'min(92vw, 900px)',
+            paddingInline: '16px',
+            minHeight: '1.4em'
           }}>
             {words.map((w, index) => (
               <motion.span
                 key={index}
-                initial={{ opacity: 0, y: -100 }}
+                initial={{ opacity: 0, y: '-100%' }}
                 transition={{ type: 'spring', stiffness: 50 }}
                 animate={
                   wordIndex === index
-                    ? { y: 0, opacity: 1 }
-                    : { y: wordIndex > index ? -150 : 150, opacity: 0 }
+                    ? { y: '0%', opacity: 1 }
+                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
                 }
                 style={{
                   position: 'absolute',
@@ -373,7 +373,8 @@ export default function Timer() {
                   right: 0,
                   width: '100%',
                   textAlign: 'center',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
                   color: (isPickrOpen && previewColor) ? previewColor : themeColor,
                   fontStyle: 'italic'
                 }}
