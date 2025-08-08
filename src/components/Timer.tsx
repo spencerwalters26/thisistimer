@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaPalette } from 'react-icons/fa';
 import { FiRotateCw } from 'react-icons/fi';
 
@@ -347,31 +347,33 @@ export default function Timer() {
           <br />
           <span style={{
             position: 'relative',
-            display: 'inline-block',
-            width: 'min(90vw, 36ch)',
-            height: '1.2em',
-            overflow: 'hidden'
+            display: 'flex',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            textAlign: 'center',
+            minHeight: '1.2em',
+            width: '100%'
           }}>
-            <AnimatePresence mode="wait" initial={false}>
+            {words.map((w, index) => (
               <motion.span
-                key={wordIndex}
-                initial={{ clipPath: 'inset(0 100% 0 0)' }}
-                animate={{ clipPath: 'inset(0 0% 0 0)' }}
-                exit={{ clipPath: 'inset(0 0% 0 100%)' }}
-                transition={{ duration: 0.4, ease: 'easeInOut' }}
+                key={index}
+                initial={{ opacity: 0, y: -100 }}
+                transition={{ type: 'spring', stiffness: 50 }}
+                animate={
+                  wordIndex === index
+                    ? { y: 0, opacity: 1 }
+                    : { y: wordIndex > index ? -150 : 150, opacity: 0 }
+                }
                 style={{
                   position: 'absolute',
-                  inset: 0,
-                  display: 'grid',
-                  placeItems: 'center',
                   whiteSpace: 'nowrap',
                   color: (isPickrOpen && previewColor) ? previewColor : themeColor,
                   fontStyle: 'italic'
                 }}
               >
-                {words[wordIndex]}
+                {w}
               </motion.span>
-            </AnimatePresence>
+            ))}
           </span>
         </h1>
         
