@@ -1,111 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-@import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --theme-font: 'Bebas Neue', sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html, body {
+  font-family: var(--theme-font) !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Timer Styles */
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  background: black;
-  color: white;
-  font-family: 'Bebas Neue', sans-serif;
-  overflow: hidden;
-}
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  text-align: center;
-  z-index: 1;
-  position: relative;
-}
-
-.hidden {
-  display: none;
-}
-
-.title-prompt, .time-prompt {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: white;
-}
-
-#timer {
-  font-size: 20rem;
-  margin-top: 2rem;
-  color: white;
-}
-
-#timer-title {
-  position: fixed;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 4rem;
-  z-index: 3;
-  text-align: center;
-  color: white;
-}
-
-#percentage {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  font-size: 2rem;
-  z-index: 2;
-  color: white;
-}
-
-#restart {
-  position: fixed;
-  top: 30px;
-  right: 40px;
-  font-size: 2.5rem;
-  color: white;
-  cursor: pointer;
-  z-index: 3;
-  display: block;
-}
-
-#progress-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background-color: cyan;
-  width: 0%;
-  transition: width 0.05s linear;
-  z-index: 0;
+  font-family: var(--theme-font) !important;
 }

@@ -9,6 +9,9 @@ export default function Timer() {
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [title, setTitle] = useState('');
+  const [totalTime, setTotalTime] = useState(0);
+  const [themeColor, setThemeColor] = useState('#00ffff');
+  const [showPalette, setShowPalette] = useState(false);
 
   const parseTime = (input: string): number => {
     const str = input.toLowerCase();
@@ -36,6 +39,7 @@ export default function Timer() {
 
     setTitle(titleInput);
     setRemainingTime(totalSeconds);
+    setTotalTime(totalSeconds);
     setIsRunning(true);
   };
 
@@ -68,20 +72,98 @@ export default function Timer() {
   }, [isRunning, remainingTime]);
 
   return (
-    <>
-      <div id="progress-bar" style={{ 
+    <div style={{
+      backgroundColor: '#1c1c1c',
+      color: 'white',
+      height: '100vh',
+      overflow: 'hidden',
+      position: 'relative',
+      margin: 0,
+      padding: 0,
+      boxSizing: 'border-box'
+    }}>
+      {/* Color palette trigger */}
+      <div
+        onClick={() => setShowPalette(prev => !prev)}
+        style={{
+          position: 'fixed',
+          top: '10px',
+          right: '12px',
+          fontSize: '1.8rem',
+          zIndex: 5,
+          color: 'white',
+          cursor: 'pointer'
+        }}
+        aria-label="Choose color theme"
+        title="Choose color theme"
+      >
+        <i className="fa-solid fa-palette"></i>
+      </div>
+
+      {/* Color palette panel */}
+      {showPalette && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '48px',
+            right: '12px',
+            background: 'rgba(0,0,0,0.8)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '10px',
+            padding: '10px',
+            display: 'flex',
+            gap: '10px',
+            zIndex: 6
+          }}
+        >
+          {['#00ffff', '#ff00ff', '#00ff88', '#ffcc00', '#ff5555', '#6a5acd'].map(color => (
+            <button
+              key={color}
+              onClick={() => { setThemeColor(color); setShowPalette(false); }}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                border: color === themeColor ? '2px solid white' : '2px solid transparent',
+                backgroundColor: color,
+                cursor: 'pointer'
+              }}
+              aria-label={`Set theme color ${color}`}
+              title={color}
+            />
+          ))}
+        </div>
+      )}
+      {/* Progress Bar */}
+      <div style={{ 
         position: 'fixed',
         top: 0,
         left: 0,
         height: '100%',
-        backgroundColor: 'cyan',
-        width: isRunning ? `${((remainingTime / parseTime(timeInput)) * 100)}%` : '0%',
-        transition: 'width 0.05s linear',
+        backgroundColor: themeColor,
+        width: totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100)}%` : '0%',
+        transition: 'width 0.3s linear',
         zIndex: 0
       }}></div>
 
-      <div className={`container ${isRunning ? 'hidden' : ''}`} id="setup">
-        <h1 className="title-prompt">What are you working on?</h1>
+      {/* Setup Screen */}
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        display: isRunning ? 'none' : 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <h1 style={{
+          marginBottom: '0.5rem',
+          fontSize: '2.2rem',
+          color: 'white'
+        }}>What are you working on?</h1>
+        
         <input
           type="text"
           value={titleInput}
@@ -89,10 +171,9 @@ export default function Timer() {
           onKeyDown={handleKeyDown}
           placeholder="world domination etc."
           style={{
-            fontFamily: 'Bebas Neue, sans-serif',
             background: 'transparent',
             border: 'none',
-            borderBottom: '2px solid cyan',
+            borderBottom: `2px solid ${themeColor}`,
             marginBottom: '2.2rem',
             fontSize: '2rem',
             color: 'white',
@@ -104,7 +185,12 @@ export default function Timer() {
           }}
         />
 
-        <h1 className="time-prompt">How long are you working for?</h1>
+        <h1 style={{
+          marginBottom: '0.5rem',
+          fontSize: '2.2rem',
+          color: 'white'
+        }}>How long are you working for?</h1>
+        
         <input
           type="text"
           value={timeInput}
@@ -112,10 +198,9 @@ export default function Timer() {
           onKeyDown={handleKeyDown}
           placeholder="remember, rome wasn't built in a day"
           style={{
-            fontFamily: 'Bebas Neue, sans-serif',
             background: 'transparent',
             border: 'none',
-            borderBottom: '2px solid cyan',
+            borderBottom: `2px solid ${themeColor}`,
             marginBottom: '2.2rem',
             fontSize: '2rem',
             color: 'white',
@@ -128,8 +213,7 @@ export default function Timer() {
         />
 
         <button onClick={startTimer} style={{
-          fontFamily: 'Bebas Neue, sans-serif',
-          background: 'cyan',
+          background: themeColor,
           color: 'black',
           border: 'none',
           padding: '0.6rem 2rem',
@@ -140,43 +224,57 @@ export default function Timer() {
         }}>Start</button>
       </div>
 
-      <div className={`container ${!isRunning ? 'hidden' : ''}`} id="timerScreen">
-        <div id="percentage" style={{
+      {/* Timer Screen */}
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        display: !isRunning ? 'none' : 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        textAlign: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
           position: 'fixed',
           top: '10px',
           left: '10px',
           fontSize: '2rem',
-          zIndex: 2
-        }}>{isRunning ? `${((remainingTime / parseTime(timeInput)) * 100).toFixed(1)}%` : '0%'}</div>
+          zIndex: 2,
+          color: 'white'
+        }}>{totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100).toFixed(1)}%` : '0%'}</div>
         
-        <div id="restart" onClick={restart} style={{
+        <div onClick={restart} style={{
           position: 'fixed',
-          top: '30px',
-          right: '40px',
+          top: '50px',
+          right: '12px',
           fontSize: '2.5rem',
           color: 'white',
           cursor: 'pointer',
           zIndex: 3,
-          display: 'block'
+          display: isRunning ? 'block' : 'none'
         }}>
           <i className="fa-solid fa-rotate-left"></i>
         </div>
         
-        <div id="timer-title" style={{
+        <div style={{
           position: 'fixed',
           top: '40px',
           left: '50%',
           transform: 'translateX(-50%)',
           fontSize: '4rem',
           zIndex: 3,
-          textAlign: 'center'
+          textAlign: 'center',
+          color: 'white'
         }}>{title}</div>
         
-        <div id="timer" style={{
+        <div style={{
           fontSize: '20rem',
-          marginTop: '2rem'
+          marginTop: '2rem',
+          color: 'white'
         }}>{formatTime(remainingTime)}</div>
       </div>
-    </>
+    </div>
   );
 }
