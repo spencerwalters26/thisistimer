@@ -33,6 +33,7 @@ export default function Timer() {
   const [startMs, setStartMs] = useState<number | null>(null);
   const [endMs, setEndMs] = useState<number | null>(null);
   const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
+  const [toast, setToast] = useState<string | null>(null);
 
   const parseTime = (input: string): number => {
     const str = input.toLowerCase();
@@ -56,7 +57,11 @@ export default function Timer() {
 
   const startTimer = () => {
     const totalSeconds = parseTime(timeInput);
-    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return;
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+      setToast("Please enter a valid time (e.g. '25', '25 min', '1 hour 30 min', or '90 sec').");
+      setTimeout(() => setToast(null), 3500);
+      return;
+    }
 
     setTitle(titleInput);
     setRemainingTime(totalSeconds);
@@ -166,15 +171,18 @@ export default function Timer() {
         top: 0,
         left: 0,
         height: '100%',
+        width: '100%',
         backgroundColor: (isPickrOpen && previewColor) ? previewColor : themeColor,
-        width: (() => {
-          if (!isRunning || startMs == null || endMs == null) return '0%';
+        transformOrigin: 'left center',
+        transform: (() => {
+          if (!isRunning || startMs == null || endMs == null) return 'scaleX(0)';
           const duration = endMs - startMs;
           const elapsed = Math.min(duration, Math.max(0, frameTime - startMs));
-          const pct = (elapsed / duration) * 100;
-          return `${pct}%`;
+          const progress = elapsed / duration;
+          return `scaleX(${progress})`;
         })(),
-        transition: 'width 40ms linear',
+        willChange: 'transform',
+        pointerEvents: 'none',
         zIndex: 0
       }}></div>
 
@@ -279,7 +287,8 @@ export default function Timer() {
               border: 'none',
               borderRadius: '9999px',
               padding: 8,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              zIndex: 4
             }}
           >
             <FaPalette size={22} />
@@ -353,6 +362,25 @@ export default function Timer() {
           const secs = Math.ceil(remainingMs / 1000);
           return formatTime(secs);
         })()}</div>
+
+        {/* Toast */}
+        {toast && (
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.85)',
+            border: `1px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
+            color: 'white',
+            padding: '10px 14px',
+            borderRadius: '8px',
+            fontSize: 'clamp(0.9rem, 3.2vw, 1.1rem)',
+            zIndex: 10
+          }}>
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );
