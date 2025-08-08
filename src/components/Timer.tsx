@@ -306,15 +306,17 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
-        {/* Animated Hero: Time to <word> */}
+        {/* Animated Hero: Time to... <word> */}
         <h1 style={{
-          marginBottom: '0.5rem',
-          fontSize: 'clamp(1.8rem, 5vw, 3rem)',
+          marginBottom: '0.75rem',
+          fontSize: 'clamp(2.2rem, 7vw, 4rem)',
           color: 'white',
           letterSpacing: '0.5px',
+          textAlign: 'center'
         }}>
-          <span>Time to&nbsp;</span>
-          <span style={{ position: 'relative', display: 'inline-flex', width: '10ch', justifyContent: 'center' }}>
+          <span>Time to...</span>
+          <br />
+          <span style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center' }}>
             <AnimatePresence mode="wait">
               <motion.span
                 key={wordIndex}
@@ -322,13 +324,13 @@ export default function Timer() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 30 }}
                 transition={{ type: 'spring', stiffness: 120, damping: 16 }}
-                style={{ position: 'absolute' }}
+                style={{ position: 'absolute', color: themeColor, fontStyle: 'italic' }}
               >
                 {words[wordIndex]}
               </motion.span>
             </AnimatePresence>
             {/* Static spacer to avoid layout shift */}
-            <span style={{ visibility: 'hidden' }}>{words[wordIndex]}</span>
+            <span style={{ visibility: 'hidden', color: themeColor, fontStyle: 'italic' }}>{words[wordIndex]}</span>
           </span>
         </h1>
         
@@ -337,7 +339,7 @@ export default function Timer() {
           value={titleInput}
           onChange={(e) => setTitleInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="world domination etc."
+          placeholder="Enter timer title"
           style={{
             background: 'transparent',
             border: 'none',
@@ -357,14 +359,14 @@ export default function Timer() {
           marginBottom: '0.5rem',
           fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
           color: 'white'
-        }}>How long are you working for?</h1>
+        }}>Enter time:</h1>
         
         <input
           type="text"
           value={timeInput}
           onChange={(e) => setTimeInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="remember, rome wasn't built in a day"
+          placeholder="e.g. 25m, 1:30:00, 90 sec"
           style={{
             background: 'transparent',
             border: 'none',
