@@ -353,18 +353,18 @@ export default function Timer() {
               overflow: 'hidden',
               width: 'min(98vw, 1200px)',
               margin: '0 auto',
-              minHeight: '2.4em'
+              minHeight: '2.2em'
             }}
           >
             {words.map((w, index) => (
               <motion.span
                 key={index}
-                initial={{ opacity: 0, y: '-100%' }}
+                initial={{ opacity: 0, top: '-120%' }}
                 transition={{ type: 'spring', stiffness: 50 }}
                 animate={
                   wordIndex === index
-                    ? { y: '0%', opacity: 1 }
-                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
+                    ? { top: '0%', opacity: 1 }
+                    : { top: wordIndex > index ? '-150%' : '150%', opacity: 0 }
                 }
                 style={{
                   position: 'absolute',
