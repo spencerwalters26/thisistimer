@@ -351,10 +351,10 @@ export default function Timer() {
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
-            overflow: 'hidden',
+            overflowY: 'hidden',
+            overflowX: 'visible',
             textAlign: 'center',
             width: 'min(98vw, 1200px)',
-            paddingInline: '16px',
             minHeight: '1.6em'
           }}>
             {words.map((w, index) => (
@@ -369,13 +369,12 @@ export default function Timer() {
                 }
                 style={{
                   position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  width: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 'max-content',
+                  maxWidth: '98vw',
                   textAlign: 'center',
-                  paddingInline: '8px',
-                  whiteSpace: 'normal',
-                  wordBreak: 'break-word',
+                  whiteSpace: 'nowrap',
                   color: (isPickrOpen && previewColor) ? previewColor : themeColor,
                   fontStyle: 'italic'
                 }}
