@@ -1,7 +1,20 @@
-'use client';
+ 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { FaPalette } from 'react-icons/fa';
+import { FiRotateCw } from 'react-icons/fi';
+
+interface ColorHexLike {
+  toHEXA: () => { toString: () => string };
+}
+
+interface PickrInstance {
+  show?: () => void;
+  hide?: () => void;
+  on: (event: string, cb: (color: unknown) => void) => void;
+  destroyAndRemove?: () => void;
+}
 
 export default function Timer() {
   const [titleInput, setTitleInput] = useState('');
@@ -11,7 +24,8 @@ export default function Timer() {
   const [title, setTitle] = useState('');
   const [totalTime, setTotalTime] = useState(0);
   const [themeColor, setThemeColor] = useState('#00ffff');
-  const [showPalette, setShowPalette] = useState(false);
+  const pickrContainerRef = useRef<HTMLDivElement | null>(null);
+  const pickrInstanceRef = useRef<PickrInstance | null>(null);
 
   const parseTime = (input: string): number => {
     const str = input.toLowerCase();
@@ -71,6 +85,49 @@ export default function Timer() {
     return () => clearInterval(interval);
   }, [isRunning, remainingTime]);
 
+  // Initialize Pickr (nano theme) for color selection
+  useEffect(() => {
+    if (!pickrContainerRef.current || pickrInstanceRef.current) return;
+    let destroyed = false;
+    (async () => {
+      const Pickr = (await import('@simonwep/pickr')).default;
+      if (destroyed) return;
+      const instance = (Pickr as unknown as { create: (opts: unknown) => PickrInstance }).create({
+        el: pickrContainerRef.current as HTMLElement,
+        theme: 'nano',
+        default: themeColor,
+        swatches: ['#00ffff', '#ff00ff', '#00ff88', '#ffcc00', '#ff5555', '#6a5acd'],
+        components: {
+          preview: true,
+          opacity: false,
+          hue: true,
+          interaction: {
+            hex: true,
+            input: true,
+            save: true
+          }
+        }
+      });
+      pickrInstanceRef.current = instance;
+      instance.on('change', (color: unknown) => {
+        const hex = (color as ColorHexLike).toHEXA().toString();
+        setThemeColor(hex);
+      });
+      instance.on('save', (color: unknown) => {
+        const hex = (color as ColorHexLike).toHEXA().toString();
+        setThemeColor(hex);
+        instance.hide?.();
+      });
+    })();
+    return () => {
+      destroyed = true;
+      try {
+        pickrInstanceRef.current?.destroyAndRemove?.();
+      } catch {}
+      pickrInstanceRef.current = null;
+    };
+  }, [pickrContainerRef, themeColor]);
+
   return (
     <div style={{
       backgroundColor: '#1c1c1c',
@@ -82,58 +139,6 @@ export default function Timer() {
       padding: 0,
       boxSizing: 'border-box'
     }}>
-      {/* Color palette trigger */}
-      <div
-        onClick={() => setShowPalette(prev => !prev)}
-        style={{
-          position: 'fixed',
-          top: '10px',
-          right: '12px',
-          fontSize: '1.8rem',
-          zIndex: 5,
-          color: 'white',
-          cursor: 'pointer'
-        }}
-        aria-label="Choose color theme"
-        title="Choose color theme"
-      >
-        <i className="fa-solid fa-palette"></i>
-      </div>
-
-      {/* Color palette panel */}
-      {showPalette && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '48px',
-            right: '12px',
-            background: 'rgba(0,0,0,0.8)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '10px',
-            padding: '10px',
-            display: 'flex',
-            gap: '10px',
-            zIndex: 6
-          }}
-        >
-          {['#00ffff', '#ff00ff', '#00ff88', '#ffcc00', '#ff5555', '#6a5acd'].map(color => (
-            <button
-              key={color}
-              onClick={() => { setThemeColor(color); setShowPalette(false); }}
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                border: color === themeColor ? '2px solid white' : '2px solid transparent',
-                backgroundColor: color,
-                cursor: 'pointer'
-              }}
-              aria-label={`Set theme color ${color}`}
-              title={color}
-            />
-          ))}
-        </div>
-      )}
       {/* Progress Bar */}
       <div style={{ 
         position: 'fixed',
@@ -222,6 +227,37 @@ export default function Timer() {
           cursor: 'pointer',
           marginTop: '0.5rem'
         }}>Start</button>
+
+        {/* Palette trigger + Pickr container (below Start) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '1rem' }}>
+          <button
+            onClick={() => pickrInstanceRef.current?.show?.()}
+            aria-label="Choose color theme"
+            title="Choose color theme"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              color: '#ffffff',
+              background: 'transparent',
+              border: `2px solid ${themeColor}`,
+              borderRadius: '8px',
+              padding: '6px 10px',
+              cursor: 'pointer'
+            }}
+          >
+            <FaPalette size={22} />
+            <span style={{ fontSize: '1.2rem', letterSpacing: '1px' }}>Colour</span>
+          </button>
+
+          {/* Hidden anchor for Pickr; Pickr will attach its trigger here */}
+          <div
+            ref={pickrContainerRef}
+            style={{ width: 0, height: 0, overflow: 'hidden' }}
+            aria-hidden="true"
+          />
+        </div>
       </div>
 
       {/* Timer Screen */}
@@ -255,7 +291,7 @@ export default function Timer() {
           zIndex: 3,
           display: isRunning ? 'block' : 'none'
         }}>
-          <i className="fa-solid fa-rotate-left"></i>
+          <FiRotateCw />
         </div>
         
         <div style={{

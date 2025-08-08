@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+@import '@simonwep/pickr/dist/themes/nano.min.css';
 
 :root {
   --theme-font: 'Bebas Neue', sans-serif;
@@ -7,8 +8,18 @@
 
 html, body {
   font-family: var(--theme-font) !important;
+  margin: 0;
+  padding: 0;
+  background: #1c1c1c;
+  border: none !important;
+  outline: none !important;
 }
 
 * {
   font-family: var(--theme-font) !important;
+  outline: none;
+}
+
+*:focus {
+  outline: none !important;
 }
