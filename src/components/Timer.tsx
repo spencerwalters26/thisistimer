@@ -245,15 +245,17 @@ export default function Timer() {
     };
   }, [pickrAnchorRef, themeColor]);
 
-  // Rotate animated hero words every 3 seconds (random next, not repeating)
+  // Rotate animated hero words every 3 seconds (mix of sequential and random, no repeat)
   useEffect(() => {
     const interval = setInterval(() => {
       setWordIndex(prev => {
         if (words.length <= 1) return prev;
-        let next = prev;
-        while (next === prev) {
-          next = Math.floor(Math.random() * words.length);
+        const useSequential = Math.random() < 0.4; // 40% sequential, 60% random
+        if (useSequential) {
+          return (prev + 1) % words.length;
         }
+        let next = prev;
+        while (next === prev) next = Math.floor(Math.random() * words.length);
         return next;
       });
     }, 3000);
@@ -349,7 +351,8 @@ export default function Timer() {
             position: 'relative',
             display: 'flex',
             justifyContent: 'center',
-            overflow: 'hidden',
+            overflowY: 'hidden',
+            overflowX: 'visible',
             textAlign: 'center',
             minHeight: '1.2em',
             width: '100%'
@@ -366,6 +369,10 @@ export default function Timer() {
                 }
                 style={{
                   position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  width: '100%',
+                  textAlign: 'center',
                   whiteSpace: 'nowrap',
                   color: (isPickrOpen && previewColor) ? previewColor : themeColor,
                   fontStyle: 'italic'
