@@ -239,11 +239,11 @@ export default function Timer() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
+              color: themeColor,
               background: 'transparent',
-              border: `2px solid ${themeColor}`,
+              border: 'none',
               borderRadius: '9999px',
-              padding: '8px 12px',
+              padding: 8,
               cursor: 'pointer'
             }}
           >
