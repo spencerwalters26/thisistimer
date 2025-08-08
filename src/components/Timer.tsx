@@ -90,7 +90,7 @@ export default function Timer() {
   const startTimer = () => {
     const raw = timeInput.trim();
     if (!raw) {
-      setToast("Please enter a time (e.g. 25, 25 min, 1:30:00, 90 sec).");
+      setToast("Enter a time (e.g., 25m or 1:30:00)");
       // Keep toast visible on mobile: avoid focusing the input to prevent keyboard covering
       if (typeof window !== 'undefined') {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -105,7 +105,7 @@ export default function Timer() {
     }
     const totalSeconds = parseTime(raw);
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
-      setToast("Invalid time. Try formats like 25, 25 min, 1h 30m, 1:30:00, or 90 sec.");
+      setToast("Invalid time (try 25m or 1:30:00)");
       if (typeof window !== 'undefined') {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {

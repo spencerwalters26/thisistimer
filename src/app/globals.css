@@ -36,4 +36,7 @@ html, body {
   transform: translateX(-50%);
   z-index: 9999;
   max-width: min(94vw, 680px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
