@@ -349,39 +349,40 @@ export default function Timer() {
           <br />
           <span style={{
             position: 'relative',
-            display: 'flex',
-            justifyContent: 'center',
-            overflowY: 'hidden',
-            overflowX: 'visible',
-            textAlign: 'center',
+            display: 'block',
+            overflow: 'hidden',
             width: 'min(98vw, 1200px)',
-            minHeight: '1.6em'
+            minHeight: '1.6em',
+            margin: '0 auto'
           }}>
-            {words.map((w, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 0, y: '-100%' }}
-                transition={{ type: 'spring', stiffness: 50 }}
-                animate={
-                  wordIndex === index
-                    ? { y: '0%', opacity: 1 }
-                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
-                }
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 'max-content',
-                  maxWidth: '98vw',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap',
-                  color: (isPickrOpen && previewColor) ? previewColor : themeColor,
-                  fontStyle: 'italic'
-                }}
-              >
-                {w}
-              </motion.span>
-            ))}
+            <span style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'max-content'
+            }}>
+              {words.map((w, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, y: '-100%' }}
+                  transition={{ type: 'spring', stiffness: 50 }}
+                  animate={
+                    wordIndex === index
+                      ? { y: '0%', opacity: 1 }
+                      : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
+                  }
+                  style={{
+                    position: 'absolute',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center',
+                    color: (isPickrOpen && previewColor) ? previewColor : themeColor,
+                    fontStyle: 'italic'
+                  }}
+                >
+                  {w}
+                </motion.span>
+              ))}
+            </span>
           </span>
         </h1>
         
