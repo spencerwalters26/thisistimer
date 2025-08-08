@@ -345,40 +345,49 @@ export default function Timer() {
           letterSpacing: '0.5px',
           textAlign: 'center'
         }}>
-          <span>Time to</span>
-          <br />
-          <span style={{
-            position: 'relative',
-            display: 'grid',
-            placeItems: 'center',
-            overflow: 'hidden',
-            width: 'min(98vw, 1200px)',
-            minHeight: '1.6em',
-            margin: '0 auto'
-          }}>
-            {words.map((w, index) => (
-              <motion.span
-                key={index}
-                initial={{ opacity: 0, y: '-100%' }}
-                transition={{ type: 'spring', stiffness: 50 }}
-                animate={
-                  wordIndex === index
-                    ? { y: '0%', opacity: 1 }
-                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
-                }
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  whiteSpace: 'nowrap',
-                  textAlign: 'center',
-                  color: (isPickrOpen && previewColor) ? previewColor : themeColor,
-                  fontStyle: 'italic'
-                }}
-              >
-                {w}
-              </motion.span>
-            ))}
+          <span
+            style={{
+              display: 'inline-flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: 'fit-content',
+              maxWidth: '98vw',
+              margin: '0 auto'
+            }}
+          >
+            <span>Time to</span>
+            <span style={{
+              position: 'relative',
+              display: 'grid',
+              placeItems: 'center',
+              overflow: 'hidden',
+              width: '100%',
+              minHeight: '1.6em'
+            }}>
+              {words.map((w, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, y: '-100%' }}
+                  transition={{ type: 'spring', stiffness: 50 }}
+                  animate={
+                    wordIndex === index
+                      ? { y: '0%', opacity: 1 }
+                      : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
+                  }
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center',
+                    color: (isPickrOpen && previewColor) ? previewColor : themeColor,
+                    fontStyle: 'italic'
+                  }}
+                >
+                  {w}
+                </motion.span>
+              ))}
+            </span>
           </span>
         </h1>
         
