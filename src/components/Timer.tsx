@@ -78,6 +78,21 @@ export default function Timer() {
     const str = input.trim().toLowerCase();
     if (!str) return 0;
 
+    // Friendly phrases / slang first
+    const phraseMatchers: Array<{ regex: RegExp; seconds: number }> = [
+      { regex: /\b(halfa|half\s*an?\s*hour|half\s*hour)\b/, seconds: 30 * 60 },
+      { regex: /\b(half\s*(a\s*)?min(ute)?s?)\b/, seconds: 30 },
+      { regex: /\b(quarter\s*(of\s*)?(an\s*)?hour|quarter\s*hour)\b/, seconds: 15 * 60 },
+      { regex: /\b(three\s*quarters\s*(of\s*)?(an\s*)?hour|three\s*quarter\s*hour|3\/4\s*hour)\b/, seconds: 45 * 60 },
+      { regex: /\b(a|one)\s*sec(ond)?s?\b/, seconds: 1 },
+      { regex: /\b(a|one)\s*min(ute)?s?\b/, seconds: 60 },
+      { regex: /\b(an|one)\s*hour\b/, seconds: 3600 },
+      { regex: /\b(couple\s*of\s*min(ute)?s?|couple\s*mins?|coupla\s*mins?)\b/, seconds: 2 * 60 },
+    ];
+    for (const m of phraseMatchers) {
+      if (m.regex.test(str)) return m.seconds;
+    }
+
     // Colon formats hh:mm(:ss)? or mm:ss
     if (str.includes(':')) {
       const parts = str.split(':').map(p => p.trim());
