@@ -26,6 +26,7 @@ export default function Timer() {
   const [themeColor, setThemeColor] = useState('#00ffff');
   const pickrContainerRef = useRef<HTMLDivElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
+  const [isRestartHovered, setIsRestartHovered] = useState(false);
 
   const parseTime = (input: string): number => {
     const str = input.toLowerCase();
@@ -238,17 +239,15 @@ export default function Timer() {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
               color: '#ffffff',
               background: 'transparent',
               border: `2px solid ${themeColor}`,
-              borderRadius: '8px',
-              padding: '6px 10px',
+              borderRadius: '9999px',
+              padding: '8px 12px',
               cursor: 'pointer'
             }}
           >
             <FaPalette size={22} />
-            <span style={{ fontSize: '1.2rem', letterSpacing: '1px' }}>Colour</span>
           </button>
 
           {/* Hidden anchor for Pickr; Pickr will attach its trigger here */}
@@ -281,15 +280,20 @@ export default function Timer() {
           color: 'white'
         }}>{totalTime > 0 ? `${(((totalTime - remainingTime) / totalTime) * 100).toFixed(1)}%` : '0%'}</div>
         
-        <div onClick={restart} style={{
+        <div
+          onClick={restart}
+          onMouseEnter={() => setIsRestartHovered(true)}
+          onMouseLeave={() => setIsRestartHovered(false)}
+          style={{
           position: 'fixed',
           top: '50px',
           right: '12px',
           fontSize: '2.5rem',
-          color: 'white',
+          color: isRestartHovered ? themeColor : 'white',
           cursor: 'pointer',
           zIndex: 3,
-          display: isRunning ? 'block' : 'none'
+          display: isRunning ? 'block' : 'none',
+          transition: 'color 0.2s ease'
         }}>
           <FiRotateCw />
         </div>
