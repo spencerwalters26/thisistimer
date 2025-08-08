@@ -345,49 +345,43 @@ export default function Timer() {
           letterSpacing: '0.5px',
           textAlign: 'center'
         }}>
+          <span style={{ display: 'block' }}>Time to</span>
           <span
             style={{
-              display: 'inline-flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              width: 'fit-content',
-              maxWidth: '98vw',
-              margin: '0 auto'
+              position: 'relative',
+              display: 'block',
+              overflow: 'hidden',
+              width: 'min(98vw, 1200px)',
+              margin: '0 auto',
+              minHeight: '2.4em'
             }}
           >
-            <span>Time to</span>
-            <span style={{
-              position: 'relative',
-              display: 'grid',
-              placeItems: 'center',
-              overflow: 'hidden',
-              width: '100%',
-              minHeight: '1.6em'
-            }}>
-              {words.map((w, index) => (
-                <motion.span
-                  key={index}
-                  initial={{ opacity: 0, y: '-100%' }}
-                  transition={{ type: 'spring', stiffness: 50 }}
-                  animate={
-                    wordIndex === index
-                      ? { y: '0%', opacity: 1 }
-                      : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
-                  }
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                    color: (isPickrOpen && previewColor) ? previewColor : themeColor,
-                    fontStyle: 'italic'
-                  }}
-                >
-                  {w}
-                </motion.span>
-              ))}
-            </span>
+            {words.map((w, index) => (
+              <motion.span
+                key={index}
+                initial={{ opacity: 0, y: '-100%' }}
+                transition={{ type: 'spring', stiffness: 50 }}
+                animate={
+                  wordIndex === index
+                    ? { y: '0%', opacity: 1 }
+                    : { y: wordIndex > index ? '-150%' : '150%', opacity: 0 }
+                }
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  maxWidth: 'min(98vw, 1200px)',
+                  padding: '0 8px',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  textAlign: 'center',
+                  color: (isPickrOpen && previewColor) ? previewColor : themeColor,
+                  fontStyle: 'italic'
+                }}
+              >
+                {w}
+              </motion.span>
+            ))}
           </span>
         </h1>
         
