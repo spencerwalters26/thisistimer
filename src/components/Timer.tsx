@@ -33,6 +33,7 @@ export default function Timer() {
   const iconButtonRef = useRef<HTMLButtonElement | null>(null);
   const timeInputRef = useRef<HTMLInputElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
   const [startMs, setStartMs] = useState<number | null>(null);
   const [endMs, setEndMs] = useState<number | null>(null);
   const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
@@ -198,6 +199,11 @@ export default function Timer() {
       setFrameTime(t);
       if (t >= endMs) {
         setIsRunning(false);
+        setIsFinished(true);
+        try {
+          const audio = new Audio('/finish-chime.mp3');
+          audio.play().catch(() => {});
+        } catch {}
         return;
       }
       rafId = requestAnimationFrame(tick);
@@ -317,6 +323,43 @@ export default function Timer() {
           >
             Dismiss
           </button>
+        </div>
+      )}
+      {isFinished && (
+        <div className="timer-finish-overlay" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div style={{
+            background: '#111',
+            border: `2px solid ${previewColor ?? themeColor}`,
+            borderRadius: 12,
+            padding: '18px 22px',
+            color: 'white',
+            fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
+            textAlign: 'center',
+            maxWidth: '90vw'
+          }}>
+            Time&apos;s up!
+            <div style={{ fontSize: 'clamp(0.9rem, 3vw, 1.2rem)', marginTop: 8, opacity: 0.8 }}>
+              Great session. Tap Restart to go again.
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={restart} style={{
+                background: previewColor ?? themeColor,
+                color: 'black',
+                border: 'none',
+                padding: '8px 14px',
+                borderRadius: 8,
+                cursor: 'pointer'
+              }}>Restart</button>
+              <button onClick={() => setIsFinished(false)} style={{
+                background: 'transparent',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.5)',
+                padding: '8px 14px',
+                borderRadius: 8,
+                cursor: 'pointer'
+              }}>Close</button>
+            </div>
+          </div>
         </div>
       )}
       {/* Progress Bar */}

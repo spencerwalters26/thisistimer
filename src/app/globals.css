@@ -40,3 +40,18 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+@keyframes timer-finish-pulse {
+  0% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.2; }
+}
+
+.timer-finish-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  animation: timer-finish-pulse 1.2s infinite;
+}
