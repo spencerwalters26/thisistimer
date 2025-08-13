@@ -381,6 +381,7 @@ export default function Timer() {
   useEffect(() => {
     if (!hasStarted) return;
     if (typeof document === 'undefined') return;
+    if (typeof document !== 'undefined' && document.hidden) return; // when hidden, let wall-clock updater own the title
     if (isRunning && startMs != null && endMs != null) {
       const remainingMs = Math.max(0, endMs - frameTime);
       const secs = Math.ceil(remainingMs / 1000);
@@ -1026,7 +1027,15 @@ export default function Timer() {
               </div>
 
               <div style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: 8 }}>Progress</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: '1.2rem' }}>Progress</div>
+                  {Object.keys(goals).length > 0 && (
+                    <button onClick={() => {
+                      setGoals({});
+                      showToast('Cleared all goals', 'success');
+                    }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Clear all</button>
+                  )}
+                </div>
                 {Object.keys(goals).length === 0 && (
                   <div style={{ opacity: 0.8 }}>No goals yet. Set one above to start tracking.</div>
                 )}
@@ -1037,7 +1046,18 @@ export default function Timer() {
                   const pctHours = g.targetHours ? Math.min(100, (hours / g.targetHours) * 100) : undefined;
                   return (
                     <div key={t} style={{ marginBottom: 10 }}>
-                      <div style={{ marginBottom: 4 }}>{t}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div>{t}</div>
+                        <div style={{ position: 'relative' }}>
+                          <button onClick={(e) => {
+                            const menu = (e.currentTarget.nextSibling as HTMLDivElement | null);
+                            if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+                          }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
+                          <div style={{ display: 'none', position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
+                            <button onClick={() => { const { [t]: _omit, ...rest } = goals; setGoals(rest); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete goal</button>
+                          </div>
+                        </div>
+                      </div>
                       {g.targetSessions != null && (
                         <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{sessions} / {g.targetSessions} sessions</div>
                       )}
@@ -1060,7 +1080,12 @@ export default function Timer() {
               </div>
 
               <div style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: '1.2rem', marginBottom: 8 }}>Recent timers</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: '1.2rem' }}>Recent timers</div>
+                  {userName && logs.length > 0 && (
+                    <button onClick={() => { setLogs([]); showToast('Cleared all timers', 'success'); }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Clear all</button>
+                  )}
+                </div>
                 {logs.length === 0 && <div style={{ opacity: 0.8 }}>No sessions yet. Go start one.</div>}
                 {logs.slice(0, 12).map(l => (
                   <div key={l.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #1f1f1f' }}>
@@ -1071,30 +1096,16 @@ export default function Timer() {
                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTime(l.seconds)} — {new Date(l.completedAt).toLocaleString()}</div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => {
-                        setTitleInput(l.title);
-                        setTimeInput(formatTime(l.seconds));
-                        setIsLogOpen(false);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Use</button>
-                      {userName && (
-                        <button onClick={() => {
-                          setSelectedUpcomingGoalTitle(l.title);
-                          showToast('Select a goal at the top of the finish screen to assign.', 'info');
-                        }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Count to goal</button>
-                      )}
+                    <div style={{ position: 'relative' }}>
+                      <button onClick={(e) => { const menu = (e.currentTarget.nextSibling as HTMLDivElement | null); if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
+                      <div style={{ display: 'none', position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
+                        <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Use</button>
+                        {userName && <button onClick={() => { setSelectedUpcomingGoalTitle(l.title); setIsGoalPickerOpen(true); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Count to goal…</button>}
+                        <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete</button>
+                      </div>
                     </div>
                   </div>
                 ))}
-                {userName && logs.length > 0 && (
-                  <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-                    <button onClick={() => {
-                      setLogs([]);
-                      showToast('Cleared all timers', 'success');
-                    }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Clear all</button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
