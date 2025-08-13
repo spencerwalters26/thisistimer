@@ -480,7 +480,7 @@ export default function Timer() {
     const b = parseInt(h.slice(4, 6), 16);
     // Perceived luminance
     const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-    return luminance > 186; // typical threshold
+    return luminance > 170; // slightly lower threshold so teal-ish hues use dark text
   };
 
   // Initialize Pickr (nano theme) for color selection
@@ -648,6 +648,18 @@ export default function Timer() {
                     </div>
                   </div>
                 )}
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <button onClick={restart} style={{
+                  background: bg,
+                  color: light ? '#000' : '#000',
+                  border: 'none',
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)'
+                }}>Restart</button>
               </div>
             </div>
           </div>
@@ -1096,7 +1108,7 @@ export default function Timer() {
           })(),
           cursor: 'pointer',
           zIndex: 3,
-          display: (isRunning || isFinished) ? 'block' : 'none',
+          display: (isRunning && !isFinished) ? 'block' : 'none',
           transition: 'color 0.2s ease',
           background: 'transparent',
           border: 'none',
