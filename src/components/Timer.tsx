@@ -46,6 +46,7 @@ export default function Timer() {
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
   const iconButtonRef = useRef<HTMLButtonElement | null>(null);
   const timeInputRef = useRef<HTMLInputElement | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const [isRestartHovered, setIsRestartHovered] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [startMs, setStartMs] = useState<number | null>(null);
@@ -65,6 +66,9 @@ export default function Timer() {
   const lastLogIdRef = useRef<string | null>(null);
   const importFileRef = useRef<HTMLInputElement | null>(null);
   const [selectedUpcomingGoalTitle, setSelectedUpcomingGoalTitle] = useState<string>('');
+  const [isTitleConfirmOpen, setIsTitleConfirmOpen] = useState(false);
+  const [pendingSeconds, setPendingSeconds] = useState<number | null>(null);
+  const [titleConfirmText, setTitleConfirmText] = useState<string>('');
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
     setToast({ message, type });
@@ -278,6 +282,36 @@ export default function Timer() {
 
     if (usedRandom) {
       setTimeInput(formatTime(totalSeconds));
+    }
+
+    // Prompt for title if empty
+    if (!titleInput.trim()) {
+      setPendingSeconds(totalSeconds);
+      const prompts: string[] = [
+        "You forgot to name your timer, champ.",
+        "A title helps you remember what this is for. Without it, future-you will be like, “Huh?” Are you sure you want to go in nameless?",
+        "This timer has no name. Like a mysterious cowboy… but less cool.",
+        "Titles give purpose. Yours has none. Did you mean to ride into the sunset without one?",
+        "Your timer is currently called ‘¯\\_(ツ)_/¯’.",
+        "Titles help you focus. Without one, you’re just winging it. Proceed without one, or nah?",
+        "Untitled timers are like emails without subjects.",
+        "They work, but no one’s happy about it. Are you sure you want to send this into the void?",
+        "No title? No vibe.",
+        "Give it a name and it’ll feel more official. Or keep it bland… your call. You sure about that?",
+        "A title is your timer’s battle cry.",
+        "Without it, you’re going in unarmed. Still want to charge into war without a sword?",
+        "This timer is running undercover.",
+        "A title blows its cover in style. Did you want to keep it anonymous?",
+        "Even goldfish remember things for longer than an untitled timer.",
+        "Name it now, or risk forgetting why you started. Are you sure you want to risk it?",
+        "Your timer feels invisible.",
+        "Titles make it seen. Do you really want to leave it in stealth mode?",
+        "Naming your timer is free. Not naming it is a choice.",
+        "And possibly a bad one. Still want to roll with it?"
+      ];
+      setTitleConfirmText(prompts[Math.floor(Math.random() * prompts.length)]);
+      setIsTitleConfirmOpen(true);
+      return;
     }
 
     setTitle(titleInput);
@@ -702,6 +736,7 @@ export default function Timer() {
             outline: 'none',
             padding: '0.4rem 0'
           }}
+          ref={titleInputRef}
         />
 
         <h1 style={{
@@ -818,6 +853,38 @@ export default function Timer() {
           <div ref={pickrAnchorRef} style={{ position: 'absolute', top: '100%', left: 0 }} />
         </div>
       </div>
+
+      {/* Title confirmation modal */}
+      {isTitleConfirmOpen && (
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 70 }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 700px)', color: 'white' }}>
+            <div style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.4rem)', marginBottom: 12 }}>{titleConfirmText}</div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <button onClick={() => {
+                setIsTitleConfirmOpen(false);
+                setTimeout(() => titleInputRef.current?.focus(), 0);
+              }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Add a title</button>
+              <button onClick={() => {
+                const secs = pendingSeconds ?? 0;
+                setIsTitleConfirmOpen(false);
+                setPendingSeconds(null);
+                // Start immediately without a title
+                const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+                setTitle(titleInput);
+                setRemainingTime(secs);
+                setTotalTime(secs);
+                setIsRunning(true);
+                setHasStarted(true);
+                setStartMs(now);
+                setEndMs(now + secs * 1000);
+                if (typeof document !== 'undefined' && originalTitleRef.current == null) {
+                  originalTitleRef.current = document.title;
+                }
+              }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: '#000', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Start without title</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth modal */}
       {isAuthOpen && (
@@ -980,10 +1047,12 @@ export default function Timer() {
           return `${pct.toFixed(1)}%`;
         })()}</div>
         
-        <div
+        <button
           onClick={restart}
           onMouseEnter={() => setIsRestartHovered(true)}
           onMouseLeave={() => setIsRestartHovered(false)}
+          aria-label="Restart"
+          title="Restart"
           style={{
           position: 'fixed',
           top: '10px',
@@ -997,10 +1066,13 @@ export default function Timer() {
           cursor: 'pointer',
           zIndex: 3,
           display: (isRunning || isFinished) ? 'block' : 'none',
-          transition: 'color 0.2s ease'
+          transition: 'color 0.2s ease',
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
         }}>
           <FiRotateCw />
-        </div>
+        </button>
 
         {isFinished && (
           <div className="restart-hint" style={{
