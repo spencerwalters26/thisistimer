@@ -60,8 +60,6 @@ export default function Timer() {
   const [goals, setGoals] = useState<Record<string, TitleGoals>>({});
   const [minRange, setMinRange] = useState('');
   const [maxRange, setMaxRange] = useState('');
-  const [minSec, setMinSec] = useState<number>(1800);
-  const [maxSec, setMaxSec] = useState<number>(7200);
   const [hasStarted, setHasStarted] = useState(false);
   const originalTitleRef = useRef<string | null>(null);
   const hasLoggedRef = useRef(false);
@@ -408,15 +406,25 @@ export default function Timer() {
     if (!isRunning && !isFinished) setToast(null);
   }, [isRunning, isFinished]);
 
-  // Sync text inputs -> sliders when user types
+  // Background tab title updater (works even when rAF is throttled)
   useEffect(() => {
-    const s = parseTime(minRange);
-    if (Number.isFinite(s) && s > 0) setMinSec(s);
-  }, [minRange]);
-  useEffect(() => {
-    const s = parseTime(maxRange);
-    if (Number.isFinite(s) && s > 0) setMaxSec(s);
-  }, [maxRange]);
+    if (!hasStarted) return;
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined') return;
+      if (isRunning && startMs != null && endMs != null) {
+        const remainingMs = Math.max(0, endMs - (typeof performance !== 'undefined' ? performance.now() : Date.now()));
+        const secs = Math.ceil(remainingMs / 1000);
+        document.title = `${formatTime(secs)} — ${title || `time to ${words[wordIndex]}`}`;
+        return;
+      }
+      if (isFinished) {
+        document.title = `00:00:00 — ${title || `time to ${words[wordIndex]}`}`;
+        return;
+      }
+      if (originalTitleRef.current) document.title = originalTitleRef.current;
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [hasStarted, isRunning, isFinished, startMs, endMs, title, wordIndex, words]);
 
   // Load user, logs and goals from localStorage
   useEffect(() => {
@@ -810,17 +818,10 @@ export default function Timer() {
             placeholder="max e.g. 2h"
             style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`, fontSize: 'clamp(1rem, 3vw, 1.2rem)', color: 'white', textAlign: 'center', width: '36vw', maxWidth: '180px', outline: 'none', padding: '0.3rem 0' }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', maxWidth: 560, padding: '6px 0' }}>
-            <input type="range" min={60} max={8 * 3600} step={60} value={minSec} onChange={(e) => setMinSec(Number(e.target.value))} style={{ flex: 1 }} />
-            <input type="range" min={60} max={8 * 3600} step={60} value={maxSec} onChange={(e) => setMaxSec(Number(e.target.value))} style={{ flex: 1 }} />
-          </div>
-          <div style={{ color: '#cfcfcf', fontSize: 'clamp(0.9rem, 2.2vw, 1.05rem)' }}>
-            {formatTime(Math.min(minSec, maxSec))} → {formatTime(Math.max(minSec, maxSec))}
-          </div>
           <button onClick={() => {
-            const lo = Math.min(minSec, maxSec);
-            const hi = Math.max(minSec, maxSec);
-            if (!(Number.isFinite(lo) && Number.isFinite(hi)) || lo <= 0 || hi <= lo) {
+            const lo = parseTime(minRange);
+            const hi = parseTime(maxRange);
+            if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo <= 0 || hi <= 0 || hi <= lo) {
               showToast('Enter a valid min and max (e.g., 30m to 2h)', 'error');
               return;
             }
@@ -1110,7 +1111,7 @@ export default function Timer() {
             top: '12px',
             right: '56px',
             fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
-            zIndex: 2,
+            zIndex: 1,
             color: (() => {
               const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
               try {
