@@ -17,6 +17,20 @@ interface PickrInstance {
   destroyAndRemove?: () => void;
 }
 
+interface TimerLogEntry {
+  id: string;
+  title: string;
+  seconds: number;
+  startedAt: number;
+  completedAt: number;
+  color: string;
+}
+
+interface TitleGoals {
+  targetSessions?: number;
+  targetHours?: number;
+}
+
 export default function Timer() {
   const [titleInput, setTitleInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
@@ -38,6 +52,72 @@ export default function Timer() {
   const [endMs, setEndMs] = useState<number | null>(null);
   const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
   const [toast, setToast] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isLogOpen, setIsLogOpen] = useState(false);
+  const [logs, setLogs] = useState<TimerLogEntry[]>([]);
+  const [goals, setGoals] = useState<Record<string, TitleGoals>>({});
+  const [minRange, setMinRange] = useState('');
+  const [maxRange, setMaxRange] = useState('');
+  const [hasStarted, setHasStarted] = useState(false);
+  const originalTitleRef = useRef<string | null>(null);
+  const hasLoggedRef = useRef(false);
+  const importFileRef = useRef<HTMLInputElement | null>(null);
+
+  const exportData = () => {
+    try {
+      const payload = {
+        version: '1',
+        exportedAt: Date.now(),
+        userName,
+        logs,
+        goals,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'timer-data.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setToast('Export failed');
+    }
+  };
+
+  const handleImportChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as { version?: string; logs?: TimerLogEntry[]; goals?: Record<string, TitleGoals>; userName?: string };
+      const importedLogs = Array.isArray(data.logs) ? data.logs : [];
+      const importedGoals = data.goals && typeof data.goals === 'object' ? data.goals : {};
+
+      // Merge logs by id; prefer item with newer completedAt
+      const byId: Record<string, TimerLogEntry> = {};
+      [...logs, ...importedLogs].forEach(item => {
+        const prev = byId[item.id];
+        if (!prev || (item.completedAt ?? 0) > (prev.completedAt ?? 0)) {
+          byId[item.id] = item;
+        }
+      });
+      const mergedLogs = Object.values(byId).sort((a, b) => b.completedAt - a.completedAt);
+
+      // Merge goals by title; imported overrides
+      const mergedGoals: Record<string, TitleGoals> = { ...goals, ...importedGoals };
+
+      setLogs(mergedLogs);
+      setGoals(mergedGoals);
+      setToast('Import complete');
+      // reset input
+      if (importFileRef.current) importFileRef.current.value = '';
+    } catch {
+      setToast('Import failed: invalid file');
+    }
+  };
   const words = [
     // Productivity
     'focus','study','work','code','write','grind','create','read','plan','finish','organise','build','research','clean','polish',
@@ -141,21 +221,41 @@ export default function Timer() {
 
   const startTimer = () => {
     const raw = timeInput.trim();
-    if (!raw) {
-      setToast("Enter a time (e.g., 25m or 1:30:00)");
-      // Keep toast visible on mobile: avoid focusing the input to prevent keyboard covering
-      if (typeof window !== 'undefined') {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          (document.activeElement as HTMLElement | null)?.blur?.();
-        } else {
-          timeInputRef.current?.focus();
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    let usedRandom = false;
+    let totalSeconds = 0;
+
+    const minProvided = !!minRange.trim();
+    const maxProvided = !!maxRange.trim();
+    if (minProvided || maxProvided) {
+      if (!(minProvided && maxProvided)) {
+        setToast('Provide both a min and max for the random range.');
+        return;
       }
-      return;
+      const minSec = parseTime(minRange);
+      const maxSec = parseTime(maxRange);
+      if (!Number.isFinite(minSec) || !Number.isFinite(maxSec) || minSec <= 0 || maxSec <= 0 || maxSec <= minSec) {
+        setToast('Invalid range. Try e.g. 30m to 2h.');
+        return;
+      }
+      totalSeconds = Math.floor(minSec + Math.random() * (maxSec - minSec + 1));
+      usedRandom = true;
+    } else {
+      if (!raw) {
+        setToast("Enter a time (e.g., 25m or 1:30:00)");
+        // Keep toast visible on mobile: avoid focusing the input to prevent keyboard covering
+        if (typeof window !== 'undefined') {
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          if (isMobile) {
+            (document.activeElement as HTMLElement | null)?.blur?.();
+          } else {
+            timeInputRef.current?.focus();
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+      }
+      totalSeconds = parseTime(raw);
     }
-    const totalSeconds = parseTime(raw);
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
       setToast("Invalid time (try 25m or 1:30:00)");
       if (typeof window !== 'undefined') {
@@ -170,13 +270,21 @@ export default function Timer() {
       return;
     }
 
+    if (usedRandom) {
+      setTimeInput(formatTime(totalSeconds));
+    }
+
     setTitle(titleInput);
     setRemainingTime(totalSeconds);
     setTotalTime(totalSeconds);
     setIsRunning(true);
+    setHasStarted(true);
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
     setStartMs(now);
     setEndMs(now + totalSeconds * 1000);
+    if (typeof document !== 'undefined' && originalTitleRef.current == null) {
+      originalTitleRef.current = document.title;
+    }
   };
 
   const restart = () => {
@@ -211,6 +319,65 @@ export default function Timer() {
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [isRunning, startMs, endMs]);
+
+  // Live document title while running/finished (only after user clicks start)
+  useEffect(() => {
+    if (!hasStarted) return;
+    if (typeof document === 'undefined') return;
+    if (isRunning && startMs != null && endMs != null) {
+      const remainingMs = Math.max(0, endMs - frameTime);
+      const secs = Math.ceil(remainingMs / 1000);
+      document.title = `${formatTime(secs)} — ${title || `time to ${words[wordIndex]}`}`;
+      return;
+    }
+    if (isFinished) {
+      document.title = `00:00:00 — ${title || `time to ${words[wordIndex]}`}`;
+      return;
+    }
+    if (originalTitleRef.current) {
+      document.title = originalTitleRef.current;
+    }
+  }, [frameTime, isRunning, isFinished, hasStarted, startMs, endMs, title, wordIndex]);
+
+  // Load user, logs and goals from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedUser = localStorage.getItem('timer_userName');
+      const savedLogs = localStorage.getItem('timer_logs_v1');
+      const savedGoals = localStorage.getItem('timer_goals_v1');
+      if (savedUser) setUserName(savedUser);
+      if (savedLogs) setLogs(JSON.parse(savedLogs));
+      if (savedGoals) setGoals(JSON.parse(savedGoals));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem('timer_logs_v1', JSON.stringify(logs)); } catch {}
+  }, [logs]);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem('timer_goals_v1', JSON.stringify(goals)); } catch {}
+  }, [goals]);
+
+  // When finished, save a log entry once
+  useEffect(() => {
+    if (!isFinished || hasLoggedRef.current) return;
+    hasLoggedRef.current = true;
+    if (!userName) return;
+    const completedAt = Date.now();
+    const startedAt = completedAt - totalTime * 1000;
+    const entry: TimerLogEntry = {
+      id: `${completedAt}-${Math.random().toString(36).slice(2, 8)}`,
+      title: title || `time to ${words[wordIndex]}`,
+      seconds: totalTime,
+      startedAt,
+      completedAt,
+      color: previewColor ?? themeColor,
+    };
+    setLogs(prev => [entry, ...prev].slice(0, 500));
+  }, [isFinished, userName, totalTime, title, previewColor, themeColor, wordIndex, words]);
 
   // Initialize Pickr (nano theme) for color selection
   useEffect(() => {
@@ -325,40 +492,25 @@ export default function Timer() {
           </button>
         </div>
       )}
+      {/* Celebratory effect when finished */}
       {isFinished && (
-        <div className="timer-finish-overlay" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div style={{
-            background: '#111',
-            border: `2px solid ${previewColor ?? themeColor}`,
-            borderRadius: 12,
-            padding: '18px 22px',
-            color: 'white',
-            fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
+        <div aria-live="polite" style={{
+          position: 'fixed',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+          zIndex: 2,
+          pointerEvents: 'none'
+        }}>
+          <div className="celebrate-text" style={{
             textAlign: 'center',
-            maxWidth: '90vw'
+            color: 'white',
+            textShadow: `0 0 12px ${(previewColor ?? themeColor)}66`,
+            padding: '0 16px'
           }}>
-            Time&apos;s up!
-            <div style={{ fontSize: 'clamp(0.9rem, 3vw, 1.2rem)', marginTop: 8, opacity: 0.8 }}>
-              Great session. Tap Restart to go again.
-            </div>
-            <div style={{ marginTop: 12, display: 'flex', gap: 10, justifyContent: 'center' }}>
-              <button onClick={restart} style={{
-                background: previewColor ?? themeColor,
-                color: 'black',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: 8,
-                cursor: 'pointer'
-              }}>Restart</button>
-              <button onClick={() => setIsFinished(false)} style={{
-                background: 'transparent',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.5)',
-                padding: '8px 14px',
-                borderRadius: 8,
-                cursor: 'pointer'
-              }}>Close</button>
-            </div>
+            <div style={{ fontSize: 'clamp(2rem, 8vw, 5rem)', fontWeight: 700 }}>Congrats!</div>
+            <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: 0.9, marginTop: 6 }}>Well done — you crushed it.</div>
+            <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: 0.8, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
           </div>
         </div>
       )}
@@ -372,7 +524,9 @@ export default function Timer() {
         backgroundColor: (isPickrOpen && previewColor) ? previewColor : themeColor,
         transformOrigin: 'left center',
         transform: (() => {
-          if (!isRunning || startMs == null || endMs == null) return 'scaleX(0)';
+          if (startMs == null || endMs == null) return 'scaleX(0)';
+          if (isFinished) return 'scaleX(1)';
+          if (!isRunning) return 'scaleX(0)';
           const duration = endMs - startMs;
           const elapsed = Math.min(duration, Math.max(0, frameTime - startMs));
           const progress = elapsed / duration;
@@ -387,7 +541,7 @@ export default function Timer() {
       <div style={{
         position: 'relative',
         zIndex: 1,
-        display: isRunning ? 'none' : 'flex',
+        display: (isRunning || isFinished) ? 'none' : 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
@@ -396,6 +550,18 @@ export default function Timer() {
         padding: '2rem'
       }}>
         {/* Animated Hero: Time to <word> (theme-colored, italic, preview-aware) */}
+        {/* Auth / Log controls */}
+        <div style={{ position: 'fixed', top: 10, right: 10, display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => setIsLogOpen(true)}
+            style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}
+          >{userName ? 'My Log' : 'View Log'}</button>
+          <button
+            onClick={() => setIsAuthOpen(true)}
+            style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}
+          >{userName ? `Hi, ${userName}` : 'Sign in'}</button>
+        </div>
+
         <h1 style={{
           marginBottom: '0.75rem',
           fontSize: 'clamp(2.2rem, 7vw, 4rem)',
@@ -492,6 +658,43 @@ export default function Timer() {
           ref={timeInputRef}
         />
 
+        {/* Random range picker next to main input */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: '-1.2rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <input
+            type="text"
+            value={minRange}
+            onChange={(e) => setMinRange(e.target.value)}
+            placeholder="min e.g. 30m"
+            style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`, fontSize: 'clamp(1rem, 3vw, 1.2rem)', color: 'white', textAlign: 'center', width: '36vw', maxWidth: '180px', outline: 'none', padding: '0.3rem 0' }}
+          />
+          <span style={{ color: '#aaa' }}>to</span>
+          <input
+            type="text"
+            value={maxRange}
+            onChange={(e) => setMaxRange(e.target.value)}
+            placeholder="max e.g. 2h"
+            style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`, fontSize: 'clamp(1rem, 3vw, 1.2rem)', color: 'white', textAlign: 'center', width: '36vw', maxWidth: '180px', outline: 'none', padding: '0.3rem 0' }}
+          />
+          <button onClick={() => {
+            const minSec = parseTime(minRange);
+            const maxSec = parseTime(maxRange);
+            if (!minRange.trim() || !maxRange.trim() || !Number.isFinite(minSec) || !Number.isFinite(maxSec) || minSec <= 0 || maxSec <= 0 || maxSec <= minSec) {
+              setToast('Enter a valid min and max (e.g., 30m to 2h)');
+              return;
+            }
+            const secs = Math.floor(minSec + Math.random() * (maxSec - minSec + 1));
+            setTimeInput(formatTime(secs));
+          }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>🎲 Random</button>
+        </div>
+
+        <div style={{
+          color: '#cfcfcf',
+          opacity: 0.9,
+          marginTop: '0.4rem',
+          marginBottom: '1.6rem',
+          fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)'
+        }}>No pause button. This isn’t Spotify Premium.</div>
+
         <button onClick={startTimer} style={{
           background: (isPickrOpen && previewColor) ? previewColor : themeColor,
           color: 'black',
@@ -539,11 +742,141 @@ export default function Timer() {
         </div>
       </div>
 
+      {/* Auth modal */}
+      {isAuthOpen && (
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 440px)', color: 'white' }}>
+            <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>Sign in</div>
+            <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: 12 }}>Save your timers to a log, track goals, and bask in achievement.</div>
+            <input
+              type="text"
+              value={userName ?? ''}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter a name or handle"
+              style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`, marginBottom: '1.2rem', fontSize: '1.2rem', color: 'white', textAlign: 'left', width: '100%', outline: 'none', padding: '0.4rem 0' }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setIsAuthOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Close</button>
+              <button onClick={() => {
+                if (!userName || !userName.trim()) { setToast('Enter a name to sign in'); return; }
+                try { localStorage.setItem('timer_userName', userName.trim()); } catch {}
+                setIsAuthOpen(false);
+              }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Logs & Goals modal */}
+      {isLogOpen && (
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(96vw, 900px)', maxHeight: '90vh', overflow: 'auto', color: 'white' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: '1.6rem' }}>{userName ? `${userName}’s Log` : 'Timer Log'}</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input ref={importFileRef} type="file" accept="application/json" onChange={handleImportChange} style={{ display: 'none' }} />
+                <button onClick={() => importFileRef.current?.click()} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Import</button>
+                <button onClick={exportData} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Export</button>
+                <button onClick={() => setIsLogOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Close</button>
+              </div>
+            </div>
+
+            {!userName && (
+              <div style={{ background: '#222', border: '1px solid #333', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+                Sign in to save sessions. Your past sessions will live on this device.
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+              <div style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: '1.2rem', marginBottom: 8 }}>Set a goal</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    placeholder="Which title? (e.g., conquer the galaxy)"
+                    defaultValue={titleInput || title}
+                    id="goal-title-input"
+                    style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', flex: '1 1 260px' }}
+                  />
+                  <input type="number" min={0} placeholder="# sessions" id="goal-sessions-input" style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 140 }} />
+                  <input type="number" min={0} step="0.5" placeholder="hours" id="goal-hours-input" style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 120 }} />
+                  <button onClick={() => {
+                    const t = (document.getElementById('goal-title-input') as HTMLInputElement | null)?.value?.trim() ?? '';
+                    const sRaw = (document.getElementById('goal-sessions-input') as HTMLInputElement | null)?.value ?? '';
+                    const hRaw = (document.getElementById('goal-hours-input') as HTMLInputElement | null)?.value ?? '';
+                    if (!t) { setToast('Enter a title for your goal'); return; }
+                    const s = sRaw ? Math.max(0, Math.floor(Number(sRaw))) : undefined;
+                    const h = hRaw ? Math.max(0, Number(hRaw)) : undefined;
+                    setGoals(prev => ({ ...prev, [t]: { targetSessions: s, targetHours: h } }));
+                  }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save goal</button>
+                </div>
+              </div>
+
+              <div style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: '1.2rem', marginBottom: 8 }}>Progress</div>
+                {Object.keys(goals).length === 0 && (
+                  <div style={{ opacity: 0.8 }}>No goals yet. Set one above to start tracking.</div>
+                )}
+                {Object.entries(goals).map(([t, g]) => {
+                  const sessions = logs.filter(l => l.title === t).length;
+                  const hours = logs.filter(l => l.title === t).reduce((acc, l) => acc + l.seconds, 0) / 3600;
+                  const pctSessions = g.targetSessions ? Math.min(100, (sessions / g.targetSessions) * 100) : undefined;
+                  const pctHours = g.targetHours ? Math.min(100, (hours / g.targetHours) * 100) : undefined;
+                  return (
+                    <div key={t} style={{ marginBottom: 10 }}>
+                      <div style={{ marginBottom: 4 }}>{t}</div>
+                      {g.targetSessions != null && (
+                        <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{sessions} / {g.targetSessions} sessions</div>
+                      )}
+                      {g.targetSessions != null && (
+                        <div style={{ background: '#1b1b1b', borderRadius: 999, overflow: 'hidden', height: 8, marginBottom: 6 }}>
+                          <div style={{ width: `${pctSessions ?? 0}%`, height: '100%', background: (isPickrOpen && previewColor) ? previewColor : themeColor }}></div>
+                        </div>
+                      )}
+                      {g.targetHours != null && (
+                        <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{hours.toFixed(1)} / {g.targetHours} hrs</div>
+                      )}
+                      {g.targetHours != null && (
+                        <div style={{ background: '#1b1b1b', borderRadius: 999, overflow: 'hidden', height: 8 }}>
+                          <div style={{ width: `${pctHours ?? 0}%`, height: '100%', background: (isPickrOpen && previewColor) ? previewColor : themeColor }}></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: '1.2rem', marginBottom: 8 }}>Recent timers</div>
+                {logs.length === 0 && <div style={{ opacity: 0.8 }}>No sessions yet. Go start one.</div>}
+                {logs.slice(0, 12).map(l => (
+                  <div key={l.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #1f1f1f' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 999, background: l.color }}></div>
+                      <div>
+                        <div>{l.title}</div>
+                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTime(l.seconds)} — {new Date(l.completedAt).toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <button onClick={() => {
+                      setTitleInput(l.title);
+                      setTimeInput(formatTime(l.seconds));
+                      setIsLogOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Use</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Timer Screen */}
       <div style={{
         position: 'relative',
         zIndex: 1,
-        display: !isRunning ? 'none' : 'flex',
+        display: (isRunning || isFinished) ? 'flex' : 'none',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
@@ -559,7 +892,8 @@ export default function Timer() {
           zIndex: 2,
           color: 'white'
         }}>{(() => {
-          if (!isRunning || startMs == null || endMs == null) return '0%';
+          if (startMs == null || endMs == null) return '0%';
+          if (isFinished) return '100%';
           const duration = endMs - startMs;
           const elapsed = Math.min(duration, Math.max(0, frameTime - startMs));
           const pct = (elapsed / duration) * 100;
@@ -578,11 +912,29 @@ export default function Timer() {
           color: isRestartHovered ? ((isPickrOpen && previewColor) ? previewColor : themeColor) : 'white',
           cursor: 'pointer',
           zIndex: 3,
-          display: isRunning ? 'block' : 'none',
+          display: (isRunning || isFinished) ? 'block' : 'none',
           transition: 'color 0.2s ease'
         }}>
           <FiRotateCw />
         </div>
+
+        {isFinished && (
+          <div className="restart-hint" style={{
+            position: 'fixed',
+            top: '12px',
+            right: '56px',
+            fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
+            zIndex: 3,
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            textShadow: '0 0 10px rgba(0,0,0,0.4)'
+          }}>
+            <span style={{ opacity: 0.9 }}>restart here</span>
+            <span style={{ color: (isPickrOpen && previewColor) ? previewColor : themeColor }}>→</span>
+          </div>
+        )}
         
         <div style={{
           position: 'fixed',
@@ -593,13 +945,22 @@ export default function Timer() {
           zIndex: 3,
           textAlign: 'center',
           color: 'white'
-        }}>{title}</div>
+        }}>{(() => {
+          if (isRunning && startMs != null && endMs != null) {
+            const remainingMs = Math.max(0, endMs - frameTime);
+            const secs = Math.ceil(remainingMs / 1000);
+            return formatTime(secs);
+          }
+          if (isFinished) return '00:00:00';
+          return title;
+        })()}</div>
         
-        <div style={{
+        <div className={isFinished ? 'timer-finished-blink' : ''} style={{
           fontSize: 'clamp(4rem, 20vw, 20rem)',
           marginTop: '2rem',
           color: 'white'
         }}>{(() => {
+          if (isFinished) return '00:00:00';
           if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
           const remainingMs = Math.max(0, endMs - frameTime);
           const secs = Math.ceil(remainingMs / 1000);
