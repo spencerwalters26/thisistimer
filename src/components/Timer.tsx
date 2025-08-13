@@ -549,7 +549,11 @@ export default function Timer() {
       instance.on('save', (color: unknown) => {
         const hex = (color as ColorHexLike).toHEXA().toString();
         setThemeColor(hex);
+        // Hide then immediately allow re-open on next click
         instance.hide?.();
+        setTimeout(() => {
+          setIsPickrOpen(false);
+        }, 0);
       });
     })();
     return () => {
@@ -879,13 +883,10 @@ export default function Timer() {
           <button
             ref={iconButtonRef}
             onClick={() => {
-              if (isPickrOpen) {
-                pickrInstanceRef.current?.hide?.();
-              } else if (pickrButtonRef.current) {
-                pickrButtonRef.current.click();
-              } else {
-                pickrInstanceRef.current?.show?.();
-              }
+              const inst = pickrInstanceRef.current;
+              if (!inst) return;
+              if (isPickrOpen) inst.hide?.();
+              else inst.show?.();
             }}
             aria-label="Choose color theme"
             title="Choose color theme"
