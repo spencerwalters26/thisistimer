@@ -66,6 +66,7 @@ export default function Timer() {
   const lastLogIdRef = useRef<string | null>(null);
   const importFileRef = useRef<HTMLInputElement | null>(null);
   const [selectedUpcomingGoalTitle, setSelectedUpcomingGoalTitle] = useState<string>('');
+  const [isGoalPickerOpen, setIsGoalPickerOpen] = useState(false);
   const [isTitleConfirmOpen, setIsTitleConfirmOpen] = useState(false);
   const [pendingSeconds, setPendingSeconds] = useState<number | null>(null);
   const [titleConfirmText, setTitleConfirmText] = useState<string>('');
@@ -411,8 +412,12 @@ export default function Timer() {
     if (!hasStarted) return;
     const interval = setInterval(() => {
       if (typeof document === 'undefined') return;
-      if (isRunning && startMs != null && endMs != null) {
-        const remainingMs = Math.max(0, endMs - (typeof performance !== 'undefined' ? performance.now() : Date.now()));
+      if (document.hidden && isRunning && startMs != null && endMs != null) {
+        // When hidden, base on wall-clock time so it doesn't drift back
+        const nowTs = Date.now();
+        const startTs = (typeof performance !== 'undefined' ? performance.timeOrigin + startMs : startMs);
+        const endTs = (typeof performance !== 'undefined' ? performance.timeOrigin + endMs : endMs);
+        const remainingMs = Math.max(0, endTs - nowTs);
         const secs = Math.ceil(remainingMs / 1000);
         document.title = `${formatTime(secs)} — ${title || `time to ${words[wordIndex]}`}`;
         return;
@@ -622,15 +627,11 @@ export default function Timer() {
 
               <div style={{ marginTop: 16, fontFamily: 'Inter, sans-serif' }}>
                 {userName ? (
-                  <div style={{ display: 'inline-flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <span style={{ opacity: subOpacity }}>Add this session to a goal:</span>
-                    <select value={selectedUpcomingGoalTitle} onChange={(e) => setSelectedUpcomingGoalTitle(e.target.value)}
-                      style={{ background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, borderRadius: 8, padding: '6px 10px' }}>
-                      <option value="">None</option>
-                      {Object.keys(goals).map(g => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
+                    <button onClick={() => setIsGoalPickerOpen(true)} style={{
+                      background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, padding: '8px 12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif'
+                    }}>Choose goal</button>
                     <button onClick={() => {
                       if (!selectedUpcomingGoalTitle) { showToast('Select a goal to add this session', 'error'); return; }
                       const id = lastLogIdRef.current;
@@ -638,7 +639,7 @@ export default function Timer() {
                       // Update the last log's title and recompute goals progress implicitly via logs
                       setLogs(prev => prev.map(l => l.id === id ? { ...l, title: selectedUpcomingGoalTitle } : l));
                       showToast('Session assigned to goal', 'success');
-                    }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Add to goal</button>
+                    }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '10px 14px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>Add to goal</button>
                   </div>
                 ) : (
                   <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
@@ -654,11 +655,12 @@ export default function Timer() {
                   background: bg,
                   color: light ? '#000' : '#000',
                   border: 'none',
-                  padding: '10px 16px',
-                  borderRadius: 10,
+                  padding: '12px 18px',
+                  borderRadius: 12,
                   cursor: 'pointer',
                   fontFamily: 'Inter, sans-serif',
-                  fontSize: 'clamp(0.95rem, 2.5vw, 1.1rem)'
+                  fontSize: 'clamp(1rem, 2.6vw, 1.15rem)',
+                  boxShadow: '0 6px 0 rgba(0,0,0,0.25)'
                 }}>Restart</button>
               </div>
             </div>
@@ -954,6 +956,29 @@ export default function Timer() {
         </div>
       )}
 
+      {/* Goal picker modal */}
+      {isGoalPickerOpen && (
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 70 }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 520px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ fontSize: '1.2rem', marginBottom: 10 }}>Choose a goal</div>
+            <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
+              {Object.keys(goals).length === 0 && (
+                <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one in your log.</div>
+              )}
+              {Object.keys(goals).map(g => (
+                <button key={g} onClick={() => { setSelectedUpcomingGoalTitle(g); setIsGoalPickerOpen(false); }}
+                  style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
+                  {g}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
+              <button onClick={() => setIsGoalPickerOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Logs & Goals modal */}
       {isLogOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
@@ -1045,14 +1070,30 @@ export default function Timer() {
                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTime(l.seconds)} — {new Date(l.completedAt).toLocaleString()}</div>
                       </div>
                     </div>
-                    <button onClick={() => {
-                      setTitleInput(l.title);
-                      setTimeInput(formatTime(l.seconds));
-                      setIsLogOpen(false);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Use</button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => {
+                        setTitleInput(l.title);
+                        setTimeInput(formatTime(l.seconds));
+                        setIsLogOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Use</button>
+                      {userName && (
+                        <button onClick={() => {
+                          setSelectedUpcomingGoalTitle(l.title);
+                          showToast('Select a goal at the top of the finish screen to assign.', 'info');
+                        }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '4px 8px', borderRadius: 8, cursor: 'pointer' }}>Count to goal</button>
+                      )}
+                    </div>
                   </div>
                 ))}
+                {userName && logs.length > 0 && (
+                  <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => {
+                      setLogs([]);
+                      showToast('Cleared all timers', 'success');
+                    }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Clear all</button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
