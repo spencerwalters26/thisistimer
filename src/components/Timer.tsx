@@ -67,6 +67,9 @@ export default function Timer() {
   const importFileRef = useRef<HTMLInputElement | null>(null);
   const [selectedUpcomingGoalTitle, setSelectedUpcomingGoalTitle] = useState<string>('');
   const [isGoalPickerOpen, setIsGoalPickerOpen] = useState(false);
+  const pendingAssignLogIdRef = useRef<string | null>(null);
+  const [openGoalMenuTitle, setOpenGoalMenuTitle] = useState<string | null>(null);
+  const [openLogMenuId, setOpenLogMenuId] = useState<string | null>(null);
   const [isTitleConfirmOpen, setIsTitleConfirmOpen] = useState(false);
   const [pendingSeconds, setPendingSeconds] = useState<number | null>(null);
   const [titleConfirmText, setTitleConfirmText] = useState<string>('');
@@ -409,6 +412,18 @@ export default function Timer() {
     if (!isRunning && !isFinished) setToast(null);
   }, [isRunning, isFinished]);
 
+  // Auto-close any open ellipsis menus on outside click
+  useEffect(() => {
+    const closeMenus = () => {
+      setOpenGoalMenuTitle(null);
+      setOpenLogMenuId(null);
+    };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', closeMenus);
+      return () => document.removeEventListener('click', closeMenus);
+    }
+  }, []);
+
   // Background tab title updater (works even when rAF is throttled)
   useEffect(() => {
     if (!hasStarted) return;
@@ -631,17 +646,9 @@ export default function Timer() {
                 {userName ? (
                   <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <span style={{ opacity: subOpacity }}>Add this session to a goal:</span>
-                    <button onClick={() => setIsGoalPickerOpen(true)} style={{
+                    <button onClick={() => { pendingAssignLogIdRef.current = lastLogIdRef.current; setIsGoalPickerOpen(true); }} style={{
                       background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, padding: '8px 12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif'
                     }}>Choose goal</button>
-                    <button onClick={() => {
-                      if (!selectedUpcomingGoalTitle) { showToast('Select a goal to add this session', 'error'); return; }
-                      const id = lastLogIdRef.current;
-                      if (!id) { showToast('Could not find the session to assign', 'error'); return; }
-                      // Update the last log's title and recompute goals progress implicitly via logs
-                      setLogs(prev => prev.map(l => l.id === id ? { ...l, title: selectedUpcomingGoalTitle } : l));
-                      showToast('Session assigned to goal', 'success');
-                    }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '10px 14px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif', boxShadow: '0 4px 0 rgba(0,0,0,0.2)' }}>Add to goal</button>
                   </div>
                 ) : (
                   <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
@@ -968,7 +975,16 @@ export default function Timer() {
                 <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one in your log.</div>
               )}
               {Object.keys(goals).map(g => (
-                <button key={g} onClick={() => { setSelectedUpcomingGoalTitle(g); setIsGoalPickerOpen(false); }}
+                <button key={g} onClick={() => {
+                  setSelectedUpcomingGoalTitle(g);
+                  setIsGoalPickerOpen(false);
+                  const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
+                  if (id) {
+                    setLogs(prev => prev.map(l => l.id === id ? { ...l, title: g } : l));
+                    showToast('Session assigned to goal', 'success');
+                    pendingAssignLogIdRef.current = null;
+                  }
+                }}
                   style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
                   {g}
                 </button>
@@ -1048,14 +1064,13 @@ export default function Timer() {
                     <div key={t} style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <div>{t}</div>
-                        <div style={{ position: 'relative' }}>
-                          <button onClick={(e) => {
-                            const menu = (e.currentTarget.nextSibling as HTMLDivElement | null);
-                            if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-                          }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
-                          <div style={{ display: 'none', position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
-                            <button onClick={() => { const { [t]: _omit, ...rest } = goals; setGoals(rest); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete goal</button>
-                          </div>
+                        <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => setOpenGoalMenuTitle(openGoalMenuTitle === t ? null : t)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
+                          {openGoalMenuTitle === t && (
+                            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
+                              <button onClick={() => { const { [t]: _omit, ...rest } = goals; setGoals(rest); setOpenGoalMenuTitle(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete goal</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       {g.targetSessions != null && (
@@ -1096,13 +1111,15 @@ export default function Timer() {
                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTime(l.seconds)} — {new Date(l.completedAt).toLocaleString()}</div>
                       </div>
                     </div>
-                    <div style={{ position: 'relative' }}>
-                      <button onClick={(e) => { const menu = (e.currentTarget.nextSibling as HTMLDivElement | null); if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
-                      <div style={{ display: 'none', position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
-                        <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Use</button>
-                        {userName && <button onClick={() => { setSelectedUpcomingGoalTitle(l.title); setIsGoalPickerOpen(true); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Count to goal…</button>}
-                        <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete</button>
-                      </div>
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => setOpenLogMenuId(openLogMenuId === l.id ? null : l.id)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
+                      {openLogMenuId === l.id && (
+                        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
+                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Use</button>
+                          {userName && <button onClick={() => { setSelectedUpcomingGoalTitle(l.title); setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Count to goal…</button>}
+                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
