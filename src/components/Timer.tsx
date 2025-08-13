@@ -1077,10 +1077,10 @@ export default function Timer() {
           left: '10px',
           fontSize: 'clamp(1rem, 3.5vw, 2rem)',
           zIndex: 2,
-          color: (() => {
+          color: isFinished ? (() => {
             const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
             return isHexColorLight(bg) ? '#111' : '#fff';
-          })()
+          })() : '#fff'
         }}>{(() => {
           if (startMs == null || endMs == null) return '0%';
           if (isFinished) return '100%';
@@ -1103,8 +1103,8 @@ export default function Timer() {
           fontSize: 'clamp(1.2rem, 3.5vw, 2.5rem)',
           color: (() => {
             const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
-            const text = isHexColorLight(base) ? '#111' : '#fff';
-            return isRestartHovered ? base : text;
+            const baseText = '#fff';
+            return isRestartHovered ? base : baseText;
           })(),
           cursor: 'pointer',
           zIndex: 3,
@@ -1117,31 +1117,7 @@ export default function Timer() {
           <FiRotateCw />
         </button>
 
-        {isFinished && (
-          <div className="restart-hint" style={{
-            position: 'fixed',
-            top: '12px',
-            right: '56px',
-            fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
-            zIndex: 1,
-            color: (() => {
-              const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
-              try {
-                const h = base.replace('#','');
-                const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
-                const cr = 255 - r, cg = 255 - g, cb = 255 - b;
-                return `rgb(${cr}, ${cg}, ${cb})`;
-              } catch { return '#fff'; }
-            })(),
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            textShadow: '0 0 10px rgba(0,0,0,0.4)'
-          }}>
-            <span style={{ opacity: 0.9 }}>restart here</span>
-            <span style={{ color: (isPickrOpen && previewColor) ? previewColor : themeColor }}>→</span>
-          </div>
-        )}
+        {/* restart hint removed */}
         
         <div style={{
           position: 'fixed',
@@ -1151,20 +1127,20 @@ export default function Timer() {
           fontSize: 'clamp(1.5rem, 6vw, 4rem)',
           zIndex: 3,
           textAlign: 'center',
-          color: (() => {
+          color: isFinished ? (() => {
             const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
             return isHexColorLight(bg) ? '#111' : '#fff';
-          })()
+          })() : '#fff'
         }}>{title}</div>
         
         {!isFinished && (
           <div className={isFinished ? 'timer-finished-blink' : ''} style={{
             fontSize: 'clamp(4rem, 20vw, 20rem)',
             marginTop: '2rem',
-            color: (() => {
+            color: isFinished ? (() => {
               const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
               return isHexColorLight(bg) ? '#111' : '#fff';
-            })()
+            })() : '#fff'
           }}>{(() => {
             if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
             const remainingMs = Math.max(0, endMs - frameTime);
