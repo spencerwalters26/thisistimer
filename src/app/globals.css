@@ -43,6 +43,13 @@ html, body {
   animation: toast-slide-in-out 5s ease forwards;
 }
 
+@supports (-webkit-touch-callout: none) {
+  /* iOS safe bottom spacing for toasts */
+  .global-toast {
+    top: env(safe-area-inset-top, 12px);
+  }
+}
+
 .toast-success { background: rgba(0, 180, 80, 0.95); border: 1px solid rgba(150, 255, 190, 0.9); }
 .toast-info { background: rgba(40, 120, 220, 0.95); border: 1px solid rgba(140, 190, 255, 0.9); }
 .toast-error { background: rgba(190, 20, 30, 0.95); border: 1px solid rgba(255, 120, 120, 0.9); }

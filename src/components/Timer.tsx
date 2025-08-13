@@ -347,6 +347,7 @@ export default function Timer() {
     if (typeof document !== 'undefined') {
       document.title = 'This Is Timer';
     }
+    originalTitleRef.current = null;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
