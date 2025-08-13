@@ -62,7 +62,9 @@ export default function Timer() {
   const [hasStarted, setHasStarted] = useState(false);
   const originalTitleRef = useRef<string | null>(null);
   const hasLoggedRef = useRef(false);
+  const lastLogIdRef = useRef<string | null>(null);
   const importFileRef = useRef<HTMLInputElement | null>(null);
+  const [selectedUpcomingGoalTitle, setSelectedUpcomingGoalTitle] = useState<string>('');
 
   const exportData = () => {
     try {
@@ -370,14 +372,31 @@ export default function Timer() {
     const startedAt = completedAt - totalTime * 1000;
     const entry: TimerLogEntry = {
       id: `${completedAt}-${Math.random().toString(36).slice(2, 8)}`,
-      title: title || `time to ${words[wordIndex]}`,
+      title: (selectedUpcomingGoalTitle && selectedUpcomingGoalTitle.trim()) ? selectedUpcomingGoalTitle.trim() : (title || `time to ${words[wordIndex]}`),
       seconds: totalTime,
       startedAt,
       completedAt,
       color: previewColor ?? themeColor,
     };
+    lastLogIdRef.current = entry.id;
     setLogs(prev => [entry, ...prev].slice(0, 500));
-  }, [isFinished, userName, totalTime, title, previewColor, themeColor, wordIndex, words]);
+  }, [isFinished, userName, totalTime, title, previewColor, themeColor, wordIndex, words, selectedUpcomingGoalTitle]);
+
+  // Helper: determine if a hex color is light
+  const isHexColorLight = (hex: string | null | undefined): boolean => {
+    if (!hex) return false;
+    let h = hex.replace('#', '').trim();
+    if (h.length === 3) {
+      h = h.split('').map(c => c + c).join('');
+    }
+    if (h.length !== 6) return false;
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    // Perceived luminance
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    return luminance > 186; // typical threshold
+  };
 
   // Initialize Pickr (nano theme) for color selection
   useEffect(() => {
@@ -493,27 +512,63 @@ export default function Timer() {
         </div>
       )}
       {/* Celebratory effect when finished */}
-      {isFinished && (
-        <div aria-live="polite" style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'grid',
-          placeItems: 'center',
-          zIndex: 2,
-          pointerEvents: 'none'
-        }}>
-          <div className="celebrate-text" style={{
-            textAlign: 'center',
-            color: 'white',
-            textShadow: `0 0 12px ${(previewColor ?? themeColor)}66`,
-            padding: '0 16px'
+      {isFinished && (() => {
+        const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
+        const light = isHexColorLight(bg);
+        const textColor = light ? '#111' : '#fff';
+        const subOpacity = light ? 0.85 : 0.9;
+        return (
+          <div aria-live="polite" style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 2,
+            pointerEvents: 'auto'
           }}>
-            <div style={{ fontSize: 'clamp(2rem, 8vw, 5rem)', fontWeight: 700 }}>Congrats!</div>
-            <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: 0.9, marginTop: 6 }}>Well done — you crushed it.</div>
-            <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: 0.8, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
+            <div className="celebrate-text" style={{
+              textAlign: 'center',
+              color: textColor,
+              textShadow: light ? 'none' : `0 0 12px ${bg}66`,
+              padding: '0 16px',
+              maxWidth: 'min(92vw, 900px)'
+            }}>
+              <div style={{ fontSize: 'clamp(2rem, 8vw, 5rem)', fontWeight: 700 }}>Congrats!</div>
+              <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: subOpacity, marginTop: 6 }}>Well done — you crushed it.</div>
+              <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
+
+              <div style={{ marginTop: 16 }}>
+                {userName ? (
+                  <div style={{ display: 'inline-flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <span style={{ opacity: subOpacity }}>Add this session to a goal:</span>
+                    <select value={selectedUpcomingGoalTitle} onChange={(e) => setSelectedUpcomingGoalTitle(e.target.value)}
+                      style={{ background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, borderRadius: 8, padding: '6px 10px' }}>
+                      <option value="">None</option>
+                      {Object.keys(goals).map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => {
+                      if (!selectedUpcomingGoalTitle) { setToast('Select a goal to add this session'); return; }
+                      const id = lastLogIdRef.current;
+                      if (!id) { setToast('Could not find the session to assign'); return; }
+                      setLogs(prev => prev.map(l => l.id === id ? { ...l, title: selectedUpcomingGoalTitle } : l));
+                      setToast('Session assigned to goal');
+                    }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Add to goal</button>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 4 }}>
+                    <span style={{ opacity: subOpacity }}>Sign in to save and assign this session to a goal.</span>
+                    <div style={{ marginTop: 8 }}>
+                      <button onClick={() => setIsAuthOpen(true)} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Sign in</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {/* Progress Bar */}
       <div style={{ 
         position: 'fixed',
@@ -659,7 +714,10 @@ export default function Timer() {
         />
 
         {/* Random range picker next to main input */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: '-1.2rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ color: '#cfcfcf', opacity: 0.9, marginTop: '-0.2rem', marginBottom: '0.6rem', fontSize: 'clamp(0.9rem, 2.2vw, 1.1rem)' }}>
+          The random overlord will decide your destiny.
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: '0rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <input
             type="text"
             value={minRange}
@@ -945,27 +1003,20 @@ export default function Timer() {
           zIndex: 3,
           textAlign: 'center',
           color: 'white'
-        }}>{(() => {
-          if (isRunning && startMs != null && endMs != null) {
+        }}>{title}</div>
+        
+        {!isFinished && (
+          <div className={isFinished ? 'timer-finished-blink' : ''} style={{
+            fontSize: 'clamp(4rem, 20vw, 20rem)',
+            marginTop: '2rem',
+            color: 'white'
+          }}>{(() => {
+            if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
             const remainingMs = Math.max(0, endMs - frameTime);
             const secs = Math.ceil(remainingMs / 1000);
             return formatTime(secs);
-          }
-          if (isFinished) return '00:00:00';
-          return title;
-        })()}</div>
-        
-        <div className={isFinished ? 'timer-finished-blink' : ''} style={{
-          fontSize: 'clamp(4rem, 20vw, 20rem)',
-          marginTop: '2rem',
-          color: 'white'
-        }}>{(() => {
-          if (isFinished) return '00:00:00';
-          if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
-          const remainingMs = Math.max(0, endMs - frameTime);
-          const secs = Math.ceil(remainingMs / 1000);
-          return formatTime(secs);
-        })()}</div>
+          })()}</div>
+        )}
       </div>
     </div>
   );
