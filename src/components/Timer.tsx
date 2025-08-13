@@ -412,9 +412,11 @@ export default function Timer() {
     if (!isRunning && !isFinished) setToast(null);
   }, [isRunning, isFinished]);
 
-  // Auto-close any open ellipsis menus on outside click
+  // Auto-close any open ellipsis menus on outside click (ignore clicks inside menu roots)
   useEffect(() => {
-    const closeMenus = () => {
+    const closeMenus = (evt: MouseEvent) => {
+      const target = evt.target as HTMLElement | null;
+      if (target && target.closest('[data-menu-root]')) return;
       setOpenGoalMenuTitle(null);
       setOpenLogMenuId(null);
     };
@@ -969,7 +971,23 @@ export default function Timer() {
       {isGoalPickerOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 70 }}>
           <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 520px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
-            <div style={{ fontSize: '1.2rem', marginBottom: 10 }}>Choose a goal</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: '1.2rem' }}>Choose a goal</div>
+              <button onClick={() => {
+                const title = prompt('New goal title');
+                if (!title) return;
+                const t = title.trim();
+                if (!t) return;
+                setGoals(prev => ({ ...prev, [t]: { targetSessions: undefined, targetHours: undefined } }));
+                const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
+                if (id) {
+                  setLogs(prev => prev.map(l => l.id === id ? { ...l, title: t } : l));
+                  showToast('Session assigned to new goal', 'success');
+                  pendingAssignLogIdRef.current = null;
+                }
+                setIsGoalPickerOpen(false);
+              }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>New goal</button>
+            </div>
             <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
               {Object.keys(goals).length === 0 && (
                 <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one in your log.</div>
@@ -1064,7 +1082,7 @@ export default function Timer() {
                     <div key={t} style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <div>{t}</div>
-                        <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
                           <button onClick={() => setOpenGoalMenuTitle(openGoalMenuTitle === t ? null : t)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
                           {openGoalMenuTitle === t && (
                             <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
@@ -1111,7 +1129,7 @@ export default function Timer() {
                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{formatTime(l.seconds)} — {new Date(l.completedAt).toLocaleString()}</div>
                       </div>
                     </div>
-                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
                       <button onClick={() => setOpenLogMenuId(openLogMenuId === l.id ? null : l.id)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
                       {openLogMenuId === l.id && (
                         <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
