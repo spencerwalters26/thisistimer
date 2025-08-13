@@ -60,6 +60,8 @@ export default function Timer() {
   const [goals, setGoals] = useState<Record<string, TitleGoals>>({});
   const [minRange, setMinRange] = useState('');
   const [maxRange, setMaxRange] = useState('');
+  const [minSec, setMinSec] = useState<number>(1800);
+  const [maxSec, setMaxSec] = useState<number>(7200);
   const [hasStarted, setHasStarted] = useState(false);
   const originalTitleRef = useRef<string | null>(null);
   const hasLoggedRef = useRef(false);
@@ -336,6 +338,16 @@ export default function Timer() {
     hasLoggedRef.current = false;
     lastLogIdRef.current = null;
     setToast(null);
+    setTitleInput('');
+    setTimeInput('');
+    setMinRange('');
+    setMaxRange('');
+    setSelectedUpcomingGoalTitle('');
+    setIsTitleConfirmOpen(false);
+    setPendingSeconds(null);
+    if (typeof document !== 'undefined') {
+      document.title = 'This Is Timer';
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -395,6 +407,16 @@ export default function Timer() {
   useEffect(() => {
     if (!isRunning && !isFinished) setToast(null);
   }, [isRunning, isFinished]);
+
+  // Sync text inputs -> sliders when user types
+  useEffect(() => {
+    const s = parseTime(minRange);
+    if (Number.isFinite(s) && s > 0) setMinSec(s);
+  }, [minRange]);
+  useEffect(() => {
+    const s = parseTime(maxRange);
+    if (Number.isFinite(s) && s > 0) setMaxSec(s);
+  }, [maxRange]);
 
   // Load user, logs and goals from localStorage
   useEffect(() => {
@@ -590,7 +612,7 @@ export default function Timer() {
               <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: subOpacity, marginTop: 6 }}>Well done — you crushed it.</div>
               <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
 
-              <div style={{ marginTop: 16 }}>
+              <div style={{ marginTop: 16, fontFamily: 'Inter, sans-serif' }}>
                 {userName ? (
                   <div style={{ display: 'inline-flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <span style={{ opacity: subOpacity }}>Add this session to a goal:</span>
@@ -605,12 +627,13 @@ export default function Timer() {
                       if (!selectedUpcomingGoalTitle) { showToast('Select a goal to add this session', 'error'); return; }
                       const id = lastLogIdRef.current;
                       if (!id) { showToast('Could not find the session to assign', 'error'); return; }
+                      // Update the last log's title and recompute goals progress implicitly via logs
                       setLogs(prev => prev.map(l => l.id === id ? { ...l, title: selectedUpcomingGoalTitle } : l));
                       showToast('Session assigned to goal', 'success');
                     }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Add to goal</button>
                   </div>
                 ) : (
-                  <div style={{ marginTop: 4 }}>
+                  <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
                     <span style={{ opacity: subOpacity }}>Sign in to save and assign this session to a goal.</span>
                     <div style={{ marginTop: 8 }}>
                       <button onClick={() => setIsAuthOpen(true)} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Sign in</button>
@@ -771,7 +794,7 @@ export default function Timer() {
         <div style={{ color: '#cfcfcf', opacity: 0.9, marginTop: '-0.2rem', marginBottom: '0.6rem', fontSize: 'clamp(0.9rem, 2.2vw, 1.1rem)' }}>
           Or have the random overlord decide your destiny.
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: '0rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: '0rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <input
             type="text"
             value={minRange}
@@ -787,14 +810,21 @@ export default function Timer() {
             placeholder="max e.g. 2h"
             style={{ background: 'transparent', border: 'none', borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`, fontSize: 'clamp(1rem, 3vw, 1.2rem)', color: 'white', textAlign: 'center', width: '36vw', maxWidth: '180px', outline: 'none', padding: '0.3rem 0' }}
           />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', maxWidth: 560, padding: '6px 0' }}>
+            <input type="range" min={60} max={8 * 3600} step={60} value={minSec} onChange={(e) => setMinSec(Number(e.target.value))} style={{ flex: 1 }} />
+            <input type="range" min={60} max={8 * 3600} step={60} value={maxSec} onChange={(e) => setMaxSec(Number(e.target.value))} style={{ flex: 1 }} />
+          </div>
+          <div style={{ color: '#cfcfcf', fontSize: 'clamp(0.9rem, 2.2vw, 1.05rem)' }}>
+            {formatTime(Math.min(minSec, maxSec))} → {formatTime(Math.max(minSec, maxSec))}
+          </div>
           <button onClick={() => {
-            const minSec = parseTime(minRange);
-            const maxSec = parseTime(maxRange);
-            if (!minRange.trim() || !maxRange.trim() || !Number.isFinite(minSec) || !Number.isFinite(maxSec) || minSec <= 0 || maxSec <= 0 || maxSec <= minSec) {
+            const lo = Math.min(minSec, maxSec);
+            const hi = Math.max(minSec, maxSec);
+            if (!(Number.isFinite(lo) && Number.isFinite(hi)) || lo <= 0 || hi <= lo) {
               showToast('Enter a valid min and max (e.g., 30m to 2h)', 'error');
               return;
             }
-            const secs = Math.floor(minSec + Math.random() * (maxSec - minSec + 1));
+            const secs = Math.floor(lo + Math.random() * (hi - lo + 1));
             setTimeInput(formatTime(secs));
           }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>🎲 Random</button>
         </div>
@@ -857,8 +887,8 @@ export default function Timer() {
       {/* Title confirmation modal */}
       {isTitleConfirmOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 70 }}>
-          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 700px)', color: 'white' }}>
-            <div style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.4rem)', marginBottom: 12 }}>{titleConfirmText}</div>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 700px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+            <div style={{ fontSize: 'clamp(1.05rem, 3.2vw, 1.25rem)', marginBottom: 12, lineHeight: 1.4 }}>{titleConfirmText}</div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button onClick={() => {
                 setIsTitleConfirmOpen(false);
@@ -889,7 +919,7 @@ export default function Timer() {
       {/* Auth modal */}
       {isAuthOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
-          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 440px)', color: 'white' }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 440px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
             <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>Sign in</div>
             <div style={{ fontSize: '1rem', opacity: 0.9, marginBottom: 12 }}>Save your timers to a log, track goals, and bask in achievement.</div>
             <input
@@ -914,7 +944,7 @@ export default function Timer() {
       {/* Logs & Goals modal */}
       {isLogOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
-          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(96vw, 900px)', maxHeight: '90vh', overflow: 'auto', color: 'white' }}>
+          <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(96vw, 900px)', maxHeight: '90vh', overflow: 'auto', color: 'white', fontFamily: 'Inter, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ fontSize: '1.6rem' }}>{userName ? `${userName}’s Log` : 'Timer Log'}</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1080,7 +1110,7 @@ export default function Timer() {
             top: '12px',
             right: '56px',
             fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
-            zIndex: 3,
+            zIndex: 2,
             color: (() => {
               const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
               try {
