@@ -51,7 +51,7 @@ export default function Timer() {
   const [startMs, setStartMs] = useState<number | null>(null);
   const [endMs, setEndMs] = useState<number | null>(null);
   const [frameTime, setFrameTime] = useState<number>(typeof performance !== 'undefined' ? performance.now() : 0);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isLogOpen, setIsLogOpen] = useState(false);
@@ -65,6 +65,10 @@ export default function Timer() {
   const lastLogIdRef = useRef<string | null>(null);
   const importFileRef = useRef<HTMLInputElement | null>(null);
   const [selectedUpcomingGoalTitle, setSelectedUpcomingGoalTitle] = useState<string>('');
+
+  const showToast = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+    setToast({ message, type });
+  };
 
   const exportData = () => {
     try {
@@ -85,7 +89,7 @@ export default function Timer() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      setToast('Export failed');
+      showToast('Export failed', 'error');
     }
   };
 
@@ -113,11 +117,11 @@ export default function Timer() {
 
       setLogs(mergedLogs);
       setGoals(mergedGoals);
-      setToast('Import complete');
+      showToast('Import complete', 'success');
       // reset input
       if (importFileRef.current) importFileRef.current.value = '';
     } catch {
-      setToast('Import failed: invalid file');
+      showToast('Import failed: invalid file', 'error');
     }
   };
   const words = [
@@ -230,20 +234,20 @@ export default function Timer() {
     const maxProvided = !!maxRange.trim();
     if (minProvided || maxProvided) {
       if (!(minProvided && maxProvided)) {
-        setToast('Provide both a min and max for the random range.');
+        showToast('Provide both a min and max for the random range.', 'error');
         return;
       }
       const minSec = parseTime(minRange);
       const maxSec = parseTime(maxRange);
       if (!Number.isFinite(minSec) || !Number.isFinite(maxSec) || minSec <= 0 || maxSec <= 0 || maxSec <= minSec) {
-        setToast('Invalid range. Try e.g. 30m to 2h.');
+        showToast('Invalid range. Try e.g. 30m to 2h.', 'error');
         return;
       }
       totalSeconds = Math.floor(minSec + Math.random() * (maxSec - minSec + 1));
       usedRandom = true;
     } else {
       if (!raw) {
-        setToast("Enter a time (e.g., 25m or 1:30:00)");
+        showToast("Enter a time (e.g., 25m or 1:30:00)", 'error');
         // Keep toast visible on mobile: avoid focusing the input to prevent keyboard covering
         if (typeof window !== 'undefined') {
           const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -259,7 +263,7 @@ export default function Timer() {
       totalSeconds = parseTime(raw);
     }
     if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
-      setToast("Invalid time (try 25m or 1:30:00)");
+      showToast("Invalid time (try 25m or 1:30:00)", 'error');
       if (typeof window !== 'undefined') {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobile) {
@@ -290,9 +294,14 @@ export default function Timer() {
   };
 
   const restart = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
+    setIsRunning(false);
+    setIsFinished(false);
+    setStartMs(null);
+    setEndMs(null);
+    setHasStarted(false);
+    hasLoggedRef.current = false;
+    lastLogIdRef.current = null;
+    setToast(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -340,6 +349,18 @@ export default function Timer() {
       document.title = originalTitleRef.current;
     }
   }, [frameTime, isRunning, isFinished, hasStarted, startMs, endMs, title, wordIndex]);
+
+  // Auto-dismiss toast after 5s
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  // Clear toast when returning to setup screen
+  useEffect(() => {
+    if (!isRunning && !isFinished) setToast(null);
+  }, [isRunning, isFinished]);
 
   // Load user, logs and goals from localStorage
   useEffect(() => {
@@ -481,9 +502,7 @@ export default function Timer() {
       boxSizing: 'border-box'
     }}>
       {toast && (
-        <div className="global-toast" role="alert" aria-live="assertive" style={{
-          background: 'rgba(190, 20, 30, 0.95)',
-          border: '1px solid rgba(255, 120, 120, 0.9)',
+        <div className={`global-toast toast-${toast.type}`} role="alert" aria-live="assertive" style={{
           color: 'white',
           padding: '14px 18px',
           borderRadius: '10px',
@@ -493,7 +512,7 @@ export default function Timer() {
           alignItems: 'center',
           gap: '12px'
         }}>
-          <span>{toast}</span>
+          <span>{toast.message}</span>
           <button
             onClick={() => setToast(null)}
             aria-label="Dismiss"
@@ -549,11 +568,11 @@ export default function Timer() {
                       ))}
                     </select>
                     <button onClick={() => {
-                      if (!selectedUpcomingGoalTitle) { setToast('Select a goal to add this session'); return; }
+                      if (!selectedUpcomingGoalTitle) { showToast('Select a goal to add this session', 'error'); return; }
                       const id = lastLogIdRef.current;
-                      if (!id) { setToast('Could not find the session to assign'); return; }
+                      if (!id) { showToast('Could not find the session to assign', 'error'); return; }
                       setLogs(prev => prev.map(l => l.id === id ? { ...l, title: selectedUpcomingGoalTitle } : l));
-                      setToast('Session assigned to goal');
+                      showToast('Session assigned to goal', 'success');
                     }} style={{ background: bg, color: light ? '#000' : '#000', border: 'none', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Add to goal</button>
                   </div>
                 ) : (
@@ -715,7 +734,7 @@ export default function Timer() {
 
         {/* Random range picker next to main input */}
         <div style={{ color: '#cfcfcf', opacity: 0.9, marginTop: '-0.2rem', marginBottom: '0.6rem', fontSize: 'clamp(0.9rem, 2.2vw, 1.1rem)' }}>
-          The random overlord will decide your destiny.
+          Or have the random overlord decide your destiny.
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: '0rem', marginBottom: '1.2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <input
@@ -737,7 +756,7 @@ export default function Timer() {
             const minSec = parseTime(minRange);
             const maxSec = parseTime(maxRange);
             if (!minRange.trim() || !maxRange.trim() || !Number.isFinite(minSec) || !Number.isFinite(maxSec) || minSec <= 0 || maxSec <= 0 || maxSec <= minSec) {
-              setToast('Enter a valid min and max (e.g., 30m to 2h)');
+              showToast('Enter a valid min and max (e.g., 30m to 2h)', 'error');
               return;
             }
             const secs = Math.floor(minSec + Math.random() * (maxSec - minSec + 1));
@@ -816,7 +835,7 @@ export default function Timer() {
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={() => setIsAuthOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Close</button>
               <button onClick={() => {
-                if (!userName || !userName.trim()) { setToast('Enter a name to sign in'); return; }
+                if (!userName || !userName.trim()) { showToast('Enter a name to sign in', 'error'); return; }
                 try { localStorage.setItem('timer_userName', userName.trim()); } catch {}
                 setIsAuthOpen(false);
               }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save</button>
@@ -862,7 +881,7 @@ export default function Timer() {
                     const t = (document.getElementById('goal-title-input') as HTMLInputElement | null)?.value?.trim() ?? '';
                     const sRaw = (document.getElementById('goal-sessions-input') as HTMLInputElement | null)?.value ?? '';
                     const hRaw = (document.getElementById('goal-hours-input') as HTMLInputElement | null)?.value ?? '';
-                    if (!t) { setToast('Enter a title for your goal'); return; }
+                    if (!t) { showToast('Enter a title for your goal', 'error'); return; }
                     const s = sRaw ? Math.max(0, Math.floor(Number(sRaw))) : undefined;
                     const h = hRaw ? Math.max(0, Number(hRaw)) : undefined;
                     setGoals(prev => ({ ...prev, [t]: { targetSessions: s, targetHours: h } }));
@@ -948,7 +967,10 @@ export default function Timer() {
           left: '10px',
           fontSize: 'clamp(1rem, 3.5vw, 2rem)',
           zIndex: 2,
-          color: 'white'
+          color: (() => {
+            const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
+            return isHexColorLight(bg) ? '#111' : '#fff';
+          })()
         }}>{(() => {
           if (startMs == null || endMs == null) return '0%';
           if (isFinished) return '100%';
@@ -967,7 +989,11 @@ export default function Timer() {
           top: '10px',
           right: '10px',
           fontSize: 'clamp(1.2rem, 3.5vw, 2.5rem)',
-          color: isRestartHovered ? ((isPickrOpen && previewColor) ? previewColor : themeColor) : 'white',
+          color: (() => {
+            const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
+            const text = isHexColorLight(base) ? '#111' : '#fff';
+            return isRestartHovered ? base : text;
+          })(),
           cursor: 'pointer',
           zIndex: 3,
           display: (isRunning || isFinished) ? 'block' : 'none',
@@ -983,7 +1009,15 @@ export default function Timer() {
             right: '56px',
             fontSize: 'clamp(0.9rem, 2.5vw, 1.4rem)',
             zIndex: 3,
-            color: 'white',
+            color: (() => {
+              const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
+              try {
+                const h = base.replace('#','');
+                const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+                const cr = 255 - r, cg = 255 - g, cb = 255 - b;
+                return `rgb(${cr}, ${cg}, ${cb})`;
+              } catch { return '#fff'; }
+            })(),
             display: 'flex',
             alignItems: 'center',
             gap: 6,
@@ -1002,14 +1036,20 @@ export default function Timer() {
           fontSize: 'clamp(1.5rem, 6vw, 4rem)',
           zIndex: 3,
           textAlign: 'center',
-          color: 'white'
+          color: (() => {
+            const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
+            return isHexColorLight(bg) ? '#111' : '#fff';
+          })()
         }}>{title}</div>
         
         {!isFinished && (
           <div className={isFinished ? 'timer-finished-blink' : ''} style={{
             fontSize: 'clamp(4rem, 20vw, 20rem)',
             marginTop: '2rem',
-            color: 'white'
+            color: (() => {
+              const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
+              return isHexColorLight(bg) ? '#111' : '#fff';
+            })()
           }}>{(() => {
             if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
             const remainingMs = Math.max(0, endMs - frameTime);
