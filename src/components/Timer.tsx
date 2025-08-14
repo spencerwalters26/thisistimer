@@ -1220,6 +1220,12 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
+        {/* Light/Dark toggle on timer view (bottom-left) */}
+        <div style={{ position: 'fixed', bottom: 12, left: 10, zIndex: 5 }}>
+          <button onClick={() => setIsLightMode(m => !m)} style={{ background: 'transparent', color: isLightMode ? '#111' : '#fff', border: isLightMode ? '1px solid rgba(0,0,0,0.5)' : '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
+            {isLightMode ? 'Light' : 'Dark'} Mode
+          </button>
+        </div>
         <div style={{
           position: 'fixed',
           top: '10px',
