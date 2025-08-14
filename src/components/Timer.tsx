@@ -162,11 +162,11 @@ export default function Timer() {
     // Epic / Over-the-top (phrases)
     'conquer the galaxy','start my villain arc','invent a new colour','hack the Pentagon (in Minecraft)','control the weather','overthrow the government (peacefully)','find Atlantis','launch the doomsday device','ascend to godhood','break the space-time continuum',
     // Everyday but dramatic
-    'clean… ugh','finally do the laundry','empty the dishwasher like a hero','make a coffee I don't need','scroll endlessly','stare into the fridge','reorganise my sock drawer','water the plant that's already dead','untangle my headphones (again)','Google symptoms I shouldn't',
+    'clean… ugh','finally do the laundry','empty the dishwasher like a hero','make a coffee I don\'t need','scroll endlessly','stare into the fridge','reorganise my sock drawer','water the plant that\'s already dead','untangle my headphones (again)','Google symptoms I shouldn\'t',
     // Fitness / Skill-based
     'master the worm','bench 200kg','run… to the fridge','beat my personal best (in napping)','learn the splits','juggle chainsaws (safely)','plank until I regret it','learn to moonwalk','win Olympic gold (in procrastination)','dunk on a 7-foot hoop',
     // Social / Work-life chaos
-    'convince boss I'm busy','reply to emails from 2019','start my OnlyFans (for feet pics)','quit my job dramatically','join a pyramid scheme','become a LinkedIn thought leader','fake a Zoom freeze','network aggressively','start an inter-office feud','cyberstalk my ex's dog',
+    'convince boss I\'m busy','reply to emails from 2019','start my OnlyFans (for feet pics)','quit my job dramatically','join a pyramid scheme','become a LinkedIn thought leader','fake a Zoom freeze','network aggressively','start an inter-office feud','cyberstalk my ex\'s dog',
     // Absurd / Internet-core
     'goon','speedrun Minecraft IRL','touch grass','yeet myself into orbit','simp publicly','invent a sandwich','1v1 God','recreate Shrek from memory','speedrun Wikipedia','become the main character'
   ];
@@ -176,7 +176,7 @@ export default function Timer() {
     'E.g. 40m (nap before regret)',
     'E.g. 2h (enough to question life choices)',
     'E.g. 69m (nice)',
-    'E.g. 8h (the sleep I'll never get)'
+    'E.g. 8h (the sleep I\'ll never get)'
   ];
   const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
   const [timePlaceholder] = useState<string>(() => pickRandom(timeExamples));
@@ -307,7 +307,7 @@ export default function Timer() {
       setPendingSeconds(totalSeconds);
       const prompts: string[] = [
         "You forgot to name your timer, champ.",
-        "A title helps you remember what this is for. Without it, future-you will be like, "Huh?" Are you sure you want to go in nameless?",
+        "A title helps you remember what this is for. Without it, future-you will be like, \"Huh?\" Are you sure you want to go in nameless?",
         "This timer has no name. Like a mysterious cowboy… but less cool.",
         "Titles give purpose. Yours has none. Did you mean to ride into the sunset without one?",
         "Your timer is currently called '¯\\_(ツ)_/¯'.",
@@ -658,7 +658,7 @@ export default function Timer() {
             }}>
               <div style={{ fontSize: 'clamp(2rem, 8vw, 5rem)', fontWeight: 700 }}>Congrats!</div>
               <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: subOpacity, marginTop: 6 }}>Well done — you crushed it.</div>
-              <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you're ready, go again.</div>
+              <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
 
               <div style={{ marginTop: 16, fontFamily: 'Inter, sans-serif' }}>
                 {userName ? (
@@ -885,7 +885,7 @@ export default function Timer() {
           marginTop: '0.4rem',
           marginBottom: '1.6rem',
           fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)'
-        }}>No pause button. This isn't Spotify Premium.</div>
+        }}>No pause button. This isn’t Spotify Premium.</div>
 
         <button onClick={startTimer} style={{
           background: (isPickrOpen && previewColor) ? previewColor : themeColor,
