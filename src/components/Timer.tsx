@@ -42,6 +42,7 @@ export default function Timer() {
   const [themeColor, setThemeColor] = useState('#00ffff');
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [isPickrOpen, setIsPickrOpen] = useState(false);
+  const [pickrInitKey, setPickrInitKey] = useState(0);
   const pickrAnchorRef = useRef<HTMLDivElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -571,6 +572,8 @@ export default function Timer() {
         try { instance.destroyAndRemove?.(); } catch {}
         pickrInstanceRef.current = null;
         setIsPickrOpen(false);
+        // Allow re-open after save
+        setPickrInitKey((k) => k + 1);
       });
     })();
     return () => {
@@ -580,7 +583,7 @@ export default function Timer() {
       } catch {}
       pickrInstanceRef.current = null;
     };
-  }, [pickrAnchorRef, themeColor]);
+  }, [pickrAnchorRef, themeColor, pickrInitKey]);
 
   // Rotate animated hero words every 3 seconds (mix of sequential and random, no repeat)
   useEffect(() => {
@@ -598,6 +601,13 @@ export default function Timer() {
     }, 3000);
     return () => clearInterval(interval);
   }, [words.length]);
+
+  // Prefill new goal title with current timer title when opening picker
+  useEffect(() => {
+    if (isGoalPickerOpen) {
+      setNewGoalTitle((titleInput && titleInput.trim()) ? titleInput.trim() : (title || ''));
+    }
+  }, [isGoalPickerOpen, titleInput, title]);
 
   return (
     <div style={{
@@ -736,8 +746,8 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
-        {/* Light/Dark toggle */}
-        <div style={{ position: 'fixed', top: 10, left: 10, display: 'flex', gap: 10 }}>
+        {/* Light/Dark toggle - default bottom-left */}
+        <div style={{ position: 'fixed', bottom: 12, left: 10, display: 'flex', gap: 10 }}>
           <button onClick={() => setIsLightMode(m => !m)} style={{ background: 'transparent', color: isLightMode ? '#111' : '#fff', border: isLightMode ? '1px solid rgba(0,0,0,0.5)' : '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
             {isLightMode ? 'Light' : 'Dark'} Mode
           </button>
@@ -1002,24 +1012,25 @@ export default function Timer() {
           <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 520px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
             <div style={{ fontSize: '1.2rem', marginBottom: 10 }}>Choose a goal</div>
             <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
-              {Object.keys(goals).length === 0 && (
+              {Object.keys(goals).length === 0 ? (
                 <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one below.</div>
+              ) : (
+                Object.keys(goals).map(g => (
+                  <button key={g} onClick={() => {
+                    setSelectedUpcomingGoalTitle(g);
+                    setIsGoalPickerOpen(false);
+                    const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
+                    if (id) {
+                      setLogs(prev => prev.map(l => l.id === id ? { ...l, title: g } : l));
+                      showToast('Session assigned to goal', 'success');
+                      pendingAssignLogIdRef.current = null;
+                    }
+                  }}
+                    style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
+                    {g}
+                  </button>
+                ))
               )}
-              {Object.keys(goals).map(g => (
-                <button key={g} onClick={() => {
-                  setSelectedUpcomingGoalTitle(g);
-                  setIsGoalPickerOpen(false);
-                  const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
-                  if (id) {
-                    setLogs(prev => prev.map(l => l.id === id ? { ...l, title: g } : l));
-                    showToast('Session assigned to goal', 'success');
-                    pendingAssignLogIdRef.current = null;
-                  }
-                }}
-                  style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
-                  {g}
-                </button>
-              ))}
             </div>
             <div style={{ marginTop: 12, background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
               <div style={{ fontSize: '1rem', marginBottom: 8 }}>New goal</div>
@@ -1046,26 +1057,7 @@ export default function Timer() {
                 }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: '#000', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save</button>
               </div>
             </div>
-            <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
-              {Object.keys(goals).length === 0 && (
-                <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one in your log.</div>
-              )}
-              {Object.keys(goals).map(g => (
-                <button key={g} onClick={() => {
-                  setSelectedUpcomingGoalTitle(g);
-                  setIsGoalPickerOpen(false);
-                  const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
-                  if (id) {
-                    setLogs(prev => prev.map(l => l.id === id ? { ...l, title: g } : l));
-                    showToast('Session assigned to goal', 'success');
-                    pendingAssignLogIdRef.current = null;
-                  }
-                }}
-                  style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
-                  {g}
-                </button>
-              ))}
-            </div>
+            {/* Removed duplicate goals list to avoid double presentation */}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 10 }}>
               <button onClick={() => setIsGoalPickerOpen(false)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Close</button>
             </div>
