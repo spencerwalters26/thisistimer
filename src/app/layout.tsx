@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: "This Is Timer",
   description: "A clean, full-screen timer with vibe presets",
   icons: {
-    icon: "/globe.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" }
+    ],
   },
 };
 
