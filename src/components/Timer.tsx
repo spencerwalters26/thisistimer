@@ -70,6 +70,9 @@ export default function Timer() {
   const pendingAssignLogIdRef = useRef<string | null>(null);
   const [openGoalMenuTitle, setOpenGoalMenuTitle] = useState<string | null>(null);
   const [openLogMenuId, setOpenLogMenuId] = useState<string | null>(null);
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalSessions, setNewGoalSessions] = useState<string>('');
+  const [newGoalHours, setNewGoalHours] = useState<string>('');
   const [isTitleConfirmOpen, setIsTitleConfirmOpen] = useState(false);
   const [pendingSeconds, setPendingSeconds] = useState<number | null>(null);
   const [titleConfirmText, setTitleConfirmText] = useState<string>('');
@@ -651,10 +654,12 @@ export default function Timer() {
               <div style={{ marginTop: 16, fontFamily: 'Inter, sans-serif' }}>
                 {userName ? (
                   <div style={{ display: 'inline-flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <span style={{ opacity: subOpacity }}>Add this session to a goal:</span>
+                    <motion.span initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 120, damping: 12 }} style={{ opacity: subOpacity }}>
+                      Add this session to a goal:
+                    </motion.span>
                     <button onClick={() => { pendingAssignLogIdRef.current = lastLogIdRef.current; setIsGoalPickerOpen(true); }} style={{
-                      background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, padding: '8px 12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif'
-                    }}>Choose goal</button>
+                      background: 'transparent', color: textColor, border: `1px solid ${textColor}55`, padding: '8px 12px', borderRadius: 10, cursor: 'pointer', fontFamily: 'Inter, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 8
+                    }}>{selectedUpcomingGoalTitle ? (<><span>✓</span><span>{selectedUpcomingGoalTitle}</span></>) : 'Choose goal'}</button>
                   </div>
                 ) : (
                   <div style={{ marginTop: 4, fontFamily: 'Inter, sans-serif' }}>
@@ -972,22 +977,50 @@ export default function Timer() {
       {isGoalPickerOpen && (
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 70 }}>
           <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(92vw, 520px)', color: 'white', fontFamily: 'Inter, sans-serif' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: '1.2rem' }}>Choose a goal</div>
-              <button onClick={() => {
-                const title = prompt('New goal title');
-                if (!title) return;
-                const t = title.trim();
-                if (!t) return;
-                setGoals(prev => ({ ...prev, [t]: { targetSessions: undefined, targetHours: undefined } }));
-                const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
-                if (id) {
-                  setLogs(prev => prev.map(l => l.id === id ? { ...l, title: t } : l));
-                  showToast('Session assigned to new goal', 'success');
-                  pendingAssignLogIdRef.current = null;
-                }
-                setIsGoalPickerOpen(false);
-              }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>New goal</button>
+            <div style={{ fontSize: '1.2rem', marginBottom: 10 }}>Choose a goal</div>
+            <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
+              {Object.keys(goals).length === 0 && (
+                <div style={{ padding: 12, opacity: 0.85 }}>No goals yet. Create one below.</div>
+              )}
+              {Object.keys(goals).map(g => (
+                <button key={g} onClick={() => {
+                  setSelectedUpcomingGoalTitle(g);
+                  setIsGoalPickerOpen(false);
+                  const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
+                  if (id) {
+                    setLogs(prev => prev.map(l => l.id === id ? { ...l, title: g } : l));
+                    showToast('Session assigned to goal', 'success');
+                    pendingAssignLogIdRef.current = null;
+                  }
+                }}
+                  style={{ width: '100%', textAlign: 'left', background: 'transparent', color: 'white', border: 'none', padding: '10px 12px', borderBottom: '1px solid #222', cursor: 'pointer' }}>
+                  {g}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, background: '#0f0f0f', border: '1px solid #222', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: '1rem', marginBottom: 8 }}>New goal</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                <input type="text" placeholder="Goal title" value={newGoalTitle} onChange={(e) => setNewGoalTitle(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', flex: '1 1 240px' }} />
+                <input type="number" min={0} placeholder="# sessions" value={newGoalSessions} onChange={(e) => setNewGoalSessions(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 120 }} />
+                <input type="number" min={0} step="0.5" placeholder="hours" value={newGoalHours} onChange={(e) => setNewGoalHours(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 100 }} />
+                <button onClick={() => {
+                  const t = newGoalTitle.trim();
+                  if (!t) { showToast('Enter a goal title', 'error'); return; }
+                  const s = newGoalSessions ? Math.max(0, Math.floor(Number(newGoalSessions))) : undefined;
+                  const h = newGoalHours ? Math.max(0, Number(newGoalHours)) : undefined;
+                  setGoals(prev => ({ ...prev, [t]: { targetSessions: s, targetHours: h } }));
+                  const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
+                  if (id) {
+                    setLogs(prev => prev.map(l => l.id === id ? { ...l, title: t } : l));
+                    showToast('Session assigned to new goal', 'success');
+                    pendingAssignLogIdRef.current = null;
+                    setSelectedUpcomingGoalTitle(t);
+                  }
+                  setIsGoalPickerOpen(false);
+                  setNewGoalTitle(''); setNewGoalSessions(''); setNewGoalHours('');
+                }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: '#000', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save</button>
+              </div>
             </div>
             <div style={{ maxHeight: '50vh', overflow: 'auto', border: '1px solid #222', borderRadius: 8 }}>
               {Object.keys(goals).length === 0 && (
