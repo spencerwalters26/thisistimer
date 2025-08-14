@@ -42,7 +42,7 @@ export default function Timer() {
   const [themeColor, setThemeColor] = useState('#00ffff');
   const [previewColor, setPreviewColor] = useState<string | null>(null);
   const [isPickrOpen, setIsPickrOpen] = useState(false);
-  const [pickrInitKey, setPickrInitKey] = useState(0);
+  const [pickrInitKey, setPickrInitKey] = useState(0); // retained but no longer required after save
   const pickrAnchorRef = useRef<HTMLDivElement | null>(null);
   const pickrInstanceRef = useRef<PickrInstance | null>(null);
   const pickrButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -569,11 +569,10 @@ export default function Timer() {
       instance.on('save', (color: unknown) => {
         const hex = (color as ColorHexLike).toHEXA().toString();
         setThemeColor(hex);
-        try { instance.destroyAndRemove?.(); } catch {}
-        pickrInstanceRef.current = null;
+        setPreviewColor(null);
         setIsPickrOpen(false);
-        // Allow re-open after save
-        setPickrInitKey((k) => k + 1);
+        // Keep instance; simply hide so the same button works again
+        try { instance.hide?.(); } catch {}
       });
     })();
     return () => {

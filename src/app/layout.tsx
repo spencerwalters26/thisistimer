@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue } from "next/font/google";
+import { MetadataRoute } from "next";
 import "./globals.css";
 
 const bebas = Bebas_Neue({
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   description: "A clean, full-screen timer with vibe presets",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/stopwatch.svg", type: "image/svg+xml" },
       { url: "/favicon.ico" }
     ],
   },
