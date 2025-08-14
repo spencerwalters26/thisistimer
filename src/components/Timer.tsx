@@ -1222,7 +1222,7 @@ export default function Timer() {
           color: isFinished ? (() => {
             const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
             return isHexColorLight(bg) ? '#111' : '#fff';
-          })() : '#fff'
+          })() : (isLightMode ? '#111' : '#fff')
         }}>{(() => {
           if (startMs == null || endMs == null) return '0%';
           if (isFinished) return '100%';
@@ -1245,7 +1245,7 @@ export default function Timer() {
           fontSize: 'clamp(1.2rem, 3.5vw, 2.5rem)',
           color: (() => {
             const base = (isPickrOpen && previewColor) ? previewColor : themeColor;
-            const baseText = '#fff';
+            const baseText = isLightMode ? '#000' : '#fff';
             return isRestartHovered ? base : baseText;
           })(),
           cursor: 'pointer',
@@ -1272,7 +1272,7 @@ export default function Timer() {
           color: isFinished ? (() => {
             const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
             return isHexColorLight(bg) ? '#111' : '#fff';
-          })() : '#fff'
+          })() : (isLightMode ? '#111' : '#fff')
         }}>{title}</div>
         
         {!isFinished && (
@@ -1282,7 +1282,7 @@ export default function Timer() {
             color: isFinished ? (() => {
               const bg = (isPickrOpen && previewColor) ? previewColor : themeColor;
               return isHexColorLight(bg) ? '#111' : '#fff';
-            })() : '#fff'
+            })() : (isLightMode ? '#111' : '#fff')
           }}>{(() => {
             if (!isRunning || startMs == null || endMs == null) return formatTime(remainingTime);
             const remainingMs = Math.max(0, endMs - frameTime);
