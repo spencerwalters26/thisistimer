@@ -3,7 +3,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 html, body {
-  font-family: 'Bebas Neue', sans-serif !important;
+  font-family: 'Inter', 'Bebas Neue', sans-serif !important;
   margin: 0;
   padding: 0;
   background: #1c1c1c;
@@ -12,7 +12,7 @@ html, body {
 }
 
 * {
-  font-family: 'Bebas Neue', sans-serif !important;
+  font-family: 'Inter', 'Bebas Neue', sans-serif !important;
   outline: none;
 }
 
