@@ -1,6 +1,7 @@
  'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaPalette } from 'react-icons/fa';
@@ -70,6 +71,8 @@ export default function Timer() {
   const pendingAssignLogIdRef = useRef<string | null>(null);
   const [openGoalMenuTitle, setOpenGoalMenuTitle] = useState<string | null>(null);
   const [openLogMenuId, setOpenLogMenuId] = useState<string | null>(null);
+  const [goalMenuPos, setGoalMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [logMenuPos, setLogMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [newGoalSessions, setNewGoalSessions] = useState<string>('');
   const [newGoalHours, setNewGoalHours] = useState<string>('');
@@ -432,7 +435,9 @@ export default function Timer() {
       const target = evt.target as HTMLElement | null;
       if (target && target.closest('[data-menu-root]')) return;
       setOpenGoalMenuTitle(null);
+      setGoalMenuPos(null);
       setOpenLogMenuId(null);
+      setLogMenuPos(null);
     };
     if (typeof document !== 'undefined') {
       document.addEventListener('click', closeMenus);
@@ -1136,14 +1141,19 @@ export default function Timer() {
                     <div key={t} style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                         <div>{t}</div>
-                        <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
-                          <button onClick={() => setOpenGoalMenuTitle(openGoalMenuTitle === t ? null : t)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
-                          {openGoalMenuTitle === t && (
-                            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
-                              <button onClick={() => { const { [t]: _omit, ...rest } = goals; setGoals(rest); setOpenGoalMenuTitle(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete goal</button>
-                            </div>
-                          )}
-                        </div>
+                  <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
+                  <button onClick={(e) => {
+                    if (openGoalMenuTitle === t) { setOpenGoalMenuTitle(null); setGoalMenuPos(null); return; }
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setGoalMenuPos({ x: rect.right, y: rect.bottom + 6 });
+                    setOpenGoalMenuTitle(t);
+                  }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
+                  </div>
+                  {openGoalMenuTitle === t && goalMenuPos && typeof document !== 'undefined' && createPortal(
+                    <div style={{ position: 'fixed', left: Math.max(8, goalMenuPos.x - 180), top: goalMenuPos.y, background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 10000, minWidth: 180 }}>
+                      <button onClick={() => { const { [t]: _omit, ...rest } = goals; setGoals(rest); setOpenGoalMenuTitle(null); setGoalMenuPos(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete goal</button>
+                    </div>, document.body
+                  )}
                       </div>
                       {g.targetSessions != null && (
                         <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{sessions} / {g.targetSessions} sessions</div>
@@ -1184,15 +1194,20 @@ export default function Timer() {
                       </div>
                     </div>
                     <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
-                      <button onClick={() => setOpenLogMenuId(openLogMenuId === l.id ? null : l.id)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
-                      {openLogMenuId === l.id && (
-                        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden', zIndex: 10000, minWidth: 200 }}>
-                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Use</button>
-                          {userName && <button onClick={() => { pendingAssignLogIdRef.current = l.id; setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Add to goal…</button>}
-                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Delete</button>
-                        </div>
-                      )}
+                      <button onClick={(e) => {
+                        if (openLogMenuId === l.id) { setOpenLogMenuId(null); setLogMenuPos(null); return; }
+                        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                        setLogMenuPos({ x: rect.right, y: rect.bottom + 6 });
+                        setOpenLogMenuId(l.id);
+                      }} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
                     </div>
+                    {openLogMenuId === l.id && logMenuPos && typeof document !== 'undefined' && createPortal(
+                      <div style={{ position: 'fixed', left: Math.max(8, logMenuPos.x - 220), top: logMenuPos.y, background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden', zIndex: 10000, minWidth: 200 }}>
+                        <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); setLogMenuPos(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Use</button>
+                        {userName && <button onClick={() => { pendingAssignLogIdRef.current = l.id; setIsGoalPickerOpen(true); setOpenLogMenuId(null); setLogMenuPos(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Add to goal…</button>}
+                        <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); setLogMenuPos(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Delete</button>
+                      </div>, document.body
+                    )}
                   </div>
                 ))}
               </div>
