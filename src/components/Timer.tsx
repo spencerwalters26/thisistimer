@@ -162,11 +162,11 @@ export default function Timer() {
     // Epic / Over-the-top (phrases)
     'conquer the galaxy','start my villain arc','invent a new colour','hack the Pentagon (in Minecraft)','control the weather','overthrow the government (peacefully)','find Atlantis','launch the doomsday device','ascend to godhood','break the space-time continuum',
     // Everyday but dramatic
-    'clean… ugh','finally do the laundry','empty the dishwasher like a hero','make a coffee I don’t need','scroll endlessly','stare into the fridge','reorganise my sock drawer','water the plant that’s already dead','untangle my headphones (again)','Google symptoms I shouldn’t',
+    'clean… ugh','finally do the laundry','empty the dishwasher like a hero','make a coffee I don't need','scroll endlessly','stare into the fridge','reorganise my sock drawer','water the plant that's already dead','untangle my headphones (again)','Google symptoms I shouldn't',
     // Fitness / Skill-based
     'master the worm','bench 200kg','run… to the fridge','beat my personal best (in napping)','learn the splits','juggle chainsaws (safely)','plank until I regret it','learn to moonwalk','win Olympic gold (in procrastination)','dunk on a 7-foot hoop',
     // Social / Work-life chaos
-    'convince boss I’m busy','reply to emails from 2019','start my OnlyFans (for feet pics)','quit my job dramatically','join a pyramid scheme','become a LinkedIn thought leader','fake a Zoom freeze','network aggressively','start an inter-office feud','cyberstalk my ex’s dog',
+    'convince boss I'm busy','reply to emails from 2019','start my OnlyFans (for feet pics)','quit my job dramatically','join a pyramid scheme','become a LinkedIn thought leader','fake a Zoom freeze','network aggressively','start an inter-office feud','cyberstalk my ex's dog',
     // Absurd / Internet-core
     'goon','speedrun Minecraft IRL','touch grass','yeet myself into orbit','simp publicly','invent a sandwich','1v1 God','recreate Shrek from memory','speedrun Wikipedia','become the main character'
   ];
@@ -176,7 +176,7 @@ export default function Timer() {
     'E.g. 40m (nap before regret)',
     'E.g. 2h (enough to question life choices)',
     'E.g. 69m (nice)',
-    'E.g. 8h (the sleep I’ll never get)'
+    'E.g. 8h (the sleep I'll never get)'
   ];
   const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
   const [timePlaceholder] = useState<string>(() => pickRandom(timeExamples));
@@ -307,17 +307,17 @@ export default function Timer() {
       setPendingSeconds(totalSeconds);
       const prompts: string[] = [
         "You forgot to name your timer, champ.",
-        "A title helps you remember what this is for. Without it, future-you will be like, “Huh?” Are you sure you want to go in nameless?",
+        "A title helps you remember what this is for. Without it, future-you will be like, "Huh?" Are you sure you want to go in nameless?",
         "This timer has no name. Like a mysterious cowboy… but less cool.",
         "Titles give purpose. Yours has none. Did you mean to ride into the sunset without one?",
-        "Your timer is currently called ‘¯\\_(ツ)_/¯’.",
-        "Titles help you focus. Without one, you’re just winging it. Proceed without one, or nah?",
+        "Your timer is currently called '¯\\_(ツ)_/¯'.",
+        "Titles help you focus. Without one, you're just winging it. Proceed without one, or nah?",
         "Untitled timers are like emails without subjects.",
-        "They work, but no one’s happy about it. Are you sure you want to send this into the void?",
+        "They work, but no one's happy about it. Are you sure you want to send this into the void?",
         "No title? No vibe.",
-        "Give it a name and it’ll feel more official. Or keep it bland… your call. You sure about that?",
-        "A title is your timer’s battle cry.",
-        "Without it, you’re going in unarmed. Still want to charge into war without a sword?",
+        "Give it a name and it'll feel more official. Or keep it bland… your call. You sure about that?",
+        "A title is your timer's battle cry.",
+        "Without it, you're going in unarmed. Still want to charge into war without a sword?",
         "This timer is running undercover.",
         "A title blows its cover in style. Did you want to keep it anonymous?",
         "Even goldfish remember things for longer than an untitled timer.",
@@ -658,7 +658,7 @@ export default function Timer() {
             }}>
               <div style={{ fontSize: 'clamp(2rem, 8vw, 5rem)', fontWeight: 700 }}>Congrats!</div>
               <div style={{ fontSize: 'clamp(1.2rem, 4vw, 2.2rem)', opacity: subOpacity, marginTop: 6 }}>Well done — you crushed it.</div>
-              <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you’re ready, go again.</div>
+              <div style={{ fontSize: 'clamp(1rem, 3.5vw, 1.6rem)', opacity: subOpacity, marginTop: 4 }}>Deep breath. When you're ready, go again.</div>
 
               <div style={{ marginTop: 16, fontFamily: 'Inter, sans-serif' }}>
                 {userName ? (
@@ -733,7 +733,7 @@ export default function Timer() {
       }}>
         {/* Light/Dark toggle */}
         <div style={{ position: 'fixed', top: 10, left: 10, display: 'flex', gap: 10 }}>
-          <button onClick={() => setIsLightMode(m => !m)} style={{ background: 'transparent', color: isLightMode ? '#111' : '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
+          <button onClick={() => setIsLightMode(m => !m)} style={{ background: 'transparent', color: isLightMode ? '#111' : '#fff', border: isLightMode ? '1px solid rgba(0,0,0,0.5)' : '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
             {isLightMode ? 'Light' : 'Dark'} Mode
           </button>
         </div>
@@ -742,7 +742,7 @@ export default function Timer() {
         <div style={{ position: 'fixed', top: 10, right: 10, display: 'flex', gap: 10 }}>
           <button
             onClick={() => setIsLogOpen(true)}
-            style={{ background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}
+            style={{ background: 'transparent', color: isLightMode ? '#111' : 'white', border: isLightMode ? '1px solid rgba(0,0,0,0.5)' : '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}
           >{userName ? 'My Log' : 'View Log'}</button>
           <button
             onClick={() => setIsAuthOpen(true)}
@@ -885,7 +885,7 @@ export default function Timer() {
           marginTop: '0.4rem',
           marginBottom: '1.6rem',
           fontSize: 'clamp(0.95rem, 2.5vw, 1.2rem)'
-        }}>No pause button. This isn’t Spotify Premium.</div>
+        }}>No pause button. This isn't Spotify Premium.</div>
 
         <button onClick={startTimer} style={{
           background: (isPickrOpen && previewColor) ? previewColor : themeColor,
@@ -1073,7 +1073,7 @@ export default function Timer() {
         <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', zIndex: 60 }}>
           <div style={{ background: '#111', border: `2px solid ${previewColor ?? themeColor}`, borderRadius: 12, padding: 18, width: 'min(96vw, 900px)', maxHeight: '90vh', overflow: 'auto', color: 'white', fontFamily: 'Inter, sans-serif' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: '1.6rem' }}>{userName ? `${userName}’s Log` : 'Timer Log'}</div>
+              <div style={{ fontSize: '1.6rem' }}>{userName ? `${userName}'s Log` : 'Timer Log'}</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <input ref={importFileRef} type="file" accept="application/json" onChange={handleImportChange} style={{ display: 'none' }} />
                 <button onClick={() => importFileRef.current?.click()} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.5)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>Import</button>
@@ -1186,10 +1186,10 @@ export default function Timer() {
                     <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
                       <button onClick={() => setOpenLogMenuId(openLogMenuId === l.id ? null : l.id)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
                       {openLogMenuId === l.id && (
-                        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden', zIndex: 5, minWidth: 180 }}>
-                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Use</button>
-                          {userName && <button onClick={() => { pendingAssignLogIdRef.current = l.id; setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Add to goal…</button>}
-                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Delete</button>
+                        <div style={{ position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden', zIndex: 10000, minWidth: 200 }}>
+                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Use</button>
+                          {userName && <button onClick={() => { pendingAssignLogIdRef.current = l.id; setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Add to goal…</button>}
+                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '12px 16px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Delete</button>
                         </div>
                       )}
                     </div>
