@@ -6,10 +6,34 @@
   box-sizing: border-box;
 }
 
+/* Theme tokens */
+:root {
+  --bg-color: #1c1c1c;
+  --text-color: #ffffff;
+  --placeholder-color: #aaaaaa;
+}
+
+/* Allow both OS-level light mode and manual class toggles */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --placeholder-color: #666666;
+  }
+}
+
+body.light,
+body.light-mode,
+body[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --placeholder-color: #666666;
+}
+
 body {
-  font-family: "Bebas Neue", sans-serif;
-  background-color: #1c1c1c;
-  color: white;
+  font-family: "Inter", "Bebas Neue", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   height: 100vh;
   overflow: hidden;
   position: relative;
@@ -49,13 +73,13 @@ h1.time-prompt {
 }
 
 input[type="text"] {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   background: transparent;
   border: none;
   border-bottom: 2px solid cyan;
   margin-bottom: 2.2rem;
   font-size: 2rem;
-  color: white;
+  color: var(--text-color);
   text-align: center;
   width: 80vw;
   max-width: 400px;
@@ -64,12 +88,12 @@ input[type="text"] {
 }
 
 input::placeholder {
-  color: #aaa;
+  color: var(--placeholder-color);
   font-size: 1.2rem;
 }
 
 button {
-  font-family: "Bebas Neue", sans-serif;
+  font-family: inherit;
   background: cyan;
   color: black;
   border: none;
@@ -88,11 +112,13 @@ button {
   font-size: 4rem;
   z-index: 3;
   text-align: center;
+  color: var(--text-color);
 }
 
 #timer {
   font-size: 20rem;
   margin-top: 2rem;
+  color: var(--text-color);
 }
 
 #percentage {
@@ -101,6 +127,7 @@ button {
   left: 10px;
   font-size: 2rem;
   z-index: 2;
+  color: var(--text-color);
 }
 
 #restart {
@@ -108,7 +135,7 @@ button {
   top: 30px;
   right: 40px;
   font-size: 2.5rem;
-  color: white;
+  color: var(--text-color);
   cursor: pointer;
   z-index: 3;
   display: none;
@@ -124,7 +151,7 @@ button {
 
 #color-picker-toggle {
   font-size: 2.2rem;
-  color: white;
+  color: var(--text-color);
   cursor: pointer;
 }
 
