@@ -1003,12 +1003,13 @@ export default function Timer() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                 <input type="text" placeholder="Goal title" value={newGoalTitle} onChange={(e) => setNewGoalTitle(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', flex: '1 1 240px' }} />
                 <input type="number" min={0} placeholder="# sessions" value={newGoalSessions} onChange={(e) => setNewGoalSessions(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 120 }} />
-                <input type="number" min={0} step="0.5" placeholder="hours" value={newGoalHours} onChange={(e) => setNewGoalHours(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 100 }} />
+                <input type="text" placeholder="time goal e.g. 2h or 90m" value={newGoalHours} onChange={(e) => setNewGoalHours(e.target.value)} style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 160 }} />
                 <button onClick={() => {
                   const t = newGoalTitle.trim();
                   if (!t) { showToast('Enter a goal title', 'error'); return; }
                   const s = newGoalSessions ? Math.max(0, Math.floor(Number(newGoalSessions))) : undefined;
-                  const h = newGoalHours ? Math.max(0, Number(newGoalHours)) : undefined;
+                  const hSecs = newGoalHours ? parseTime(newGoalHours) : 0;
+                  const h = hSecs > 0 ? Math.max(0, hSecs / 3600) : undefined;
                   setGoals(prev => ({ ...prev, [t]: { targetSessions: s, targetHours: h } }));
                   const id = pendingAssignLogIdRef.current ?? lastLogIdRef.current;
                   if (id) {
@@ -1081,14 +1082,15 @@ export default function Timer() {
                     style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', flex: '1 1 260px' }}
                   />
                   <input type="number" min={0} placeholder="# sessions" id="goal-sessions-input" style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 140 }} />
-                  <input type="number" min={0} step="0.5" placeholder="hours" id="goal-hours-input" style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 120 }} />
+                  <input type="text" placeholder="time goal e.g. 1h 30m" id="goal-hours-input" style={{ background: 'transparent', border: 'none', borderBottom: '2px solid #444', color: 'white', fontSize: '1rem', padding: '6px 0', width: 180 }} />
                   <button onClick={() => {
                     const t = (document.getElementById('goal-title-input') as HTMLInputElement | null)?.value?.trim() ?? '';
                     const sRaw = (document.getElementById('goal-sessions-input') as HTMLInputElement | null)?.value ?? '';
                     const hRaw = (document.getElementById('goal-hours-input') as HTMLInputElement | null)?.value ?? '';
                     if (!t) { showToast('Enter a title for your goal', 'error'); return; }
                     const s = sRaw ? Math.max(0, Math.floor(Number(sRaw))) : undefined;
-                    const h = hRaw ? Math.max(0, Number(hRaw)) : undefined;
+                    const hSecs = hRaw ? parseTime(hRaw) : 0;
+                    const h = hSecs > 0 ? Math.max(0, hSecs / 3600) : undefined;
                     setGoals(prev => ({ ...prev, [t]: { targetSessions: s, targetHours: h } }));
                   }} style={{ background: (isPickrOpen && previewColor) ? previewColor : themeColor, color: 'black', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}>Save goal</button>
                 </div>
@@ -1134,12 +1136,12 @@ export default function Timer() {
                         </div>
                       )}
                       {g.targetHours != null && (
-                        <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{hours.toFixed(1)} / {g.targetHours} hrs</div>
-                      )}
-                      {g.targetHours != null && (
-                        <div style={{ background: '#1b1b1b', borderRadius: 999, overflow: 'hidden', height: 8 }}>
-                          <div style={{ width: `${pctHours ?? 0}%`, height: '100%', background: (isPickrOpen && previewColor) ? previewColor : themeColor }}></div>
-                        </div>
+                        <>
+                          <div style={{ fontSize: '0.95rem', opacity: 0.9, marginBottom: 4 }}>{hours.toFixed(1)} / {g.targetHours} hrs ({(pctHours ?? 0).toFixed(1)}%)</div>
+                          <div style={{ background: '#1b1b1b', borderRadius: 999, overflow: 'hidden', height: 8 }}>
+                            <div style={{ width: `${pctHours ?? 0}%`, height: '100%', background: (isPickrOpen && previewColor) ? previewColor : themeColor }}></div>
+                          </div>
+                        </>
                       )}
                     </div>
                   );
