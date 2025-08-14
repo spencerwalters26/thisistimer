@@ -563,11 +563,9 @@ export default function Timer() {
       instance.on('save', (color: unknown) => {
         const hex = (color as ColorHexLike).toHEXA().toString();
         setThemeColor(hex);
-        // Hide then immediately allow re-open on next click
-        instance.hide?.();
-        setTimeout(() => {
-          setIsPickrOpen(false);
-        }, 0);
+        try { instance.destroyAndRemove?.(); } catch {}
+        pickrInstanceRef.current = null;
+        setIsPickrOpen(false);
       });
     })();
     return () => {
@@ -609,7 +607,7 @@ export default function Timer() {
     }}>
       {toast && (
         <div className={`global-toast toast-${toast.type}`} role="alert" aria-live="assertive" style={{
-          color: 'white',
+          color: isLightMode ? '#111' : 'white',
           padding: '14px 18px',
           borderRadius: '10px',
           boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
@@ -625,8 +623,8 @@ export default function Timer() {
             style={{
               marginLeft: '12px',
               background: 'transparent',
-              color: 'white',
-              border: '1px solid rgba(255,255,255,0.5)',
+              color: isLightMode ? '#111' : 'white',
+              border: `1px solid ${isLightMode ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)'}`,
               borderRadius: '8px',
               padding: '6px 10px',
               cursor: 'pointer'
@@ -906,9 +904,12 @@ export default function Timer() {
             ref={iconButtonRef}
             onClick={() => {
               const inst = pickrInstanceRef.current;
-              if (!inst) return;
-              if (isPickrOpen) inst.hide?.();
-              else inst.show?.();
+              if (inst) {
+                if (isPickrOpen) inst.hide?.(); else inst.show?.();
+              } else {
+                // Force re-init path
+                setThemeColor(prev => prev);
+              }
             }}
             aria-label="Choose color theme"
             title="Choose color theme"
@@ -929,7 +930,7 @@ export default function Timer() {
           </button>
 
           {/* Invisible anchor so Pickr can position relative to the icon */}
-          <div ref={pickrAnchorRef} style={{ position: 'absolute', top: '100%', left: 0 }} />
+          <div ref={pickrAnchorRef} style={{ position: 'absolute', top: '100%', left: 0, zIndex: 10 }} />
         </div>
       </div>
 
