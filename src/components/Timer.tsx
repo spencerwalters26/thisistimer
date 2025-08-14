@@ -73,6 +73,17 @@ export default function Timer() {
   const [newGoalTitle, setNewGoalTitle] = useState('');
   const [newGoalSessions, setNewGoalSessions] = useState<string>('');
   const [newGoalHours, setNewGoalHours] = useState<string>('');
+  const [isLightMode, setIsLightMode] = useState<boolean>(false);
+
+  // Load/save light mode preference
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { const saved = localStorage.getItem('timer_lightmode'); if (saved) setIsLightMode(saved === '1'); } catch {}
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { localStorage.setItem('timer_lightmode', isLightMode ? '1' : '0'); } catch {}
+  }, [isLightMode]);
   const [isTitleConfirmOpen, setIsTitleConfirmOpen] = useState(false);
   const [pendingSeconds, setPendingSeconds] = useState<number | null>(null);
   const [titleConfirmText, setTitleConfirmText] = useState<string>('');
@@ -587,8 +598,8 @@ export default function Timer() {
 
   return (
     <div style={{
-      backgroundColor: '#1c1c1c',
-      color: 'white',
+      backgroundColor: isLightMode ? '#f5f5f5' : '#1c1c1c',
+      color: isLightMode ? '#111' : 'white',
       height: '100vh',
       overflow: 'hidden',
       position: 'relative',
@@ -722,6 +733,12 @@ export default function Timer() {
         textAlign: 'center',
         padding: '2rem'
       }}>
+        {/* Light/Dark toggle */}
+        <div style={{ position: 'fixed', top: 10, left: 10, display: 'flex', gap: 10 }}>
+          <button onClick={() => setIsLightMode(m => !m)} style={{ background: 'transparent', color: isLightMode ? '#111' : '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '6px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
+            {isLightMode ? 'Light' : 'Dark'} Mode
+          </button>
+        </div>
         {/* Animated Hero: Time to <word> (theme-colored, italic, preview-aware) */}
         {/* Auth / Log controls */}
         <div style={{ position: 'fixed', top: 10, right: 10, display: 'flex', gap: 10 }}>
@@ -738,7 +755,7 @@ export default function Timer() {
         <h1 style={{
           marginBottom: '0.75rem',
           fontSize: 'clamp(2.2rem, 7vw, 4rem)',
-          color: 'white',
+          color: isLightMode ? '#111' : 'white',
           letterSpacing: '0.5px',
           textAlign: 'center'
         }}>
@@ -794,7 +811,7 @@ export default function Timer() {
             borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
             fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
-            color: 'white',
+            color: isLightMode ? '#111' : 'white',
             textAlign: 'center',
             width: '80vw',
             maxWidth: '400px',
@@ -807,7 +824,7 @@ export default function Timer() {
         <h1 style={{
           marginBottom: '0.5rem',
           fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
-          color: 'white'
+          color: isLightMode ? '#111' : 'white'
         }}>How much time you got?</h1>
         
         <input
@@ -822,7 +839,7 @@ export default function Timer() {
             borderBottom: `2px solid ${(isPickrOpen && previewColor) ? previewColor : themeColor}`,
             marginBottom: '2.2rem',
             fontSize: 'clamp(1.2rem, 3.5vw, 2rem)',
-            color: 'white',
+            color: isLightMode ? '#111' : 'white',
             textAlign: 'center',
             width: '80vw',
             maxWidth: '400px',
@@ -1168,10 +1185,10 @@ export default function Timer() {
                     <div style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()} data-menu-root>
                       <button onClick={() => setOpenLogMenuId(openLogMenuId === l.id ? null : l.id)} style={{ background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', padding: '2px 8px', borderRadius: 8, cursor: 'pointer' }}>⋯</button>
                       {openLogMenuId === l.id && (
-                        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 8, overflow: 'hidden', zIndex: 5 }}>
-                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Use</button>
-                          {userName && <button onClick={() => { setSelectedUpcomingGoalTitle(l.title); setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Count to goal…</button>}
-                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '8px 12px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>Delete</button>
+                        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#111', border: '1px solid #222', borderRadius: 10, overflow: 'hidden', zIndex: 5, minWidth: 180 }}>
+                          <button onClick={() => { setTitleInput(l.title); setTimeInput(formatTime(l.seconds)); setIsLogOpen(false); setOpenLogMenuId(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Use</button>
+                          {userName && <button onClick={() => { pendingAssignLogIdRef.current = l.id; setIsGoalPickerOpen(true); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Add to goal…</button>}
+                          <button onClick={() => { setLogs(prev => prev.filter(x => x.id !== l.id)); setOpenLogMenuId(null); }} style={{ background: 'transparent', color: '#fff', border: 'none', padding: '10px 14px', cursor: 'pointer', width: '100%', textAlign: 'left', fontSize: '1rem' }}>Delete</button>
                         </div>
                       )}
                     </div>
