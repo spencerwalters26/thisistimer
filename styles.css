@@ -31,8 +31,7 @@ body[data-theme="light"] {
 }
 
 body {
-  /* font-family: "Inter", "Bebas Neue", sans-serif; */
-  font-family: "Inter", sans-serif;
+  font-family: "Bebas Neue", "Inter", sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   height: 100vh;
